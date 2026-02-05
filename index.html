@@ -8,7 +8,7 @@
     :root{
       --bg:#0b1220; --card:#121b2e; --line:#24304c;
       --text:#e9eefc; --muted:#b7c0da; --btn:#1e2a46; --btn2:#2b3a6b;
-      --accent:#7aa2ff; --warn:#ffd37a;
+      --accent:#7aa2ff;
     }
     *{box-sizing:border-box}
     body{margin:0;font-family:"Noto Sans TC","Microsoft JhengHei",system-ui,sans-serif;background:var(--bg);color:var(--text)}
@@ -18,7 +18,6 @@
     h2{margin:14px 0 8px;font-size:18px}
     p{margin:8px 0;line-height:1.75;color:var(--muted)}
     .small{font-size:13px;color:var(--muted)}
-    .warn{color:var(--warn)}
     .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
     .pill{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border:1px solid var(--line);border-radius:999px;color:var(--muted)}
     .q{font-size:18px;color:var(--text);margin-top:14px}
@@ -42,6 +41,7 @@
     .table th,.table td{border-bottom:1px solid var(--line);padding:10px 6px;text-align:left}
     .muted{color:var(--muted)}
     .menuGrid{display:grid;gap:10px;margin-top:10px}
+    .mono{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace;}
   </style>
 </head>
 <body>
@@ -128,7 +128,7 @@ const BANK = {
           {k:"S",t:"安穩感與一致性"},
           {k:"C",t:"可預期與有標準"}]},
       {q:"回想最近一段時間，你最像哪一種狀態？",
-       o:[{k:"D",t:"我在推事情、解決問題、把卡點清掉"},
+       o:[{k:"D",t:"我在推動前進、解決問題、把卡點清掉"},
           {k:"I",t:"我在撐互動、讓大家好溝通"},
           {k:"S",t:"我在穩住生活、顧好關係與日常"},
           {k:"C",t:"我在補細節、控品質、避免出錯"}]},
@@ -253,42 +253,44 @@ const BANK = {
 };
 
 /** =========================
- * 四型素材
+ * 四型素材（簡版）
  * ========================= */
 const TYPE = {
-  D:{name:"D（主導）",essence:"你在意推進與結果。事情能被處理、能往前走，你比較安定。",needs:["清楚目標與期限","能做主、能推進","被尊重判斷"],stress:["拖延卡關","討論很久不決定","被動等待"],shadow:"壓力大時你可能更急更直接；你在用推進讓自己回到掌控。",repair:["下一步縮小：先做到A","用里程碑取代催促","暫定決策＋驗證條件"],howToTreat:["先講結論與期限","給可選方案與權責邊界","把事情落到回報格式"],speak:["句型：『我有點急是因為卡住了。我需要在（時間）前定下一步。你比較能做A還是B？』","句型：『我想推進不是要逼你。我們先做到A，剩下再調整。』"]},
-  I:{name:"I（影響）",essence:"你在意連結與互動。被回應、被理解會讓你有力量。",needs:["被回應被理解","有溫度交流","被肯定被邀請"],stress:["被忽略冷處理","氣氛僵硬","只談規則不談感受"],shadow:"壓力大時你更想要確認與回應；你在守護連結。",repair:["先事實後感受","把期待講成可做到請求","把求確認改成求安排"],howToTreat:["先給回應","先肯定再談調整","下一步落到具體安排"],speak:["句型：『我有點不安因為我感覺我們沒連上。我想聽聽你怎麼看。』","句型：『你不用講很多，一句回應也可以，讓我知道我們在同一邊。』"]},
-  S:{name:"S（穩定）",essence:"你在意安穩與合作。你會顧關係與節奏，穩定讓你安心。",needs:["可預期節奏","溫和但清楚界線","互相體諒"],stress:["被逼很急","衝突太直接","要立刻表態"],shadow:"壓力大時你可能更忍耐或延後衝突；你在保護關係與自己。",repair:["先講影響再講需求","界線說成照顧合作","練習小步表態"],howToTreat:["先給緩衝與預告","溫和但清楚說需求","避免臨時變更逼迫"],speak:["句型：『我需要一點時間消化，但我願意談。我們可不可以約（時間）再說清楚？』","句型：『我不是不配合，我是需要穩一點的步驟。可以先給我明確下一步嗎？』"]},
-  C:{name:"C（謹慎）",essence:"你在意正確與一致。標準清楚、邏輯成立你會放鬆。",needs:["清楚定義與標準","可驗證依據","一致性可追蹤"],stress:["標準不清一直改","資訊不足被迫決策","粗糙不一致"],shadow:"壓力大時你更想控風險、反覆檢查；你在避免更大成本的翻車。",repair:["暫定結論＋驗證清單","必要標準其餘彈性","用檢核表取代反覆想"],howToTreat:["先講標準與定義","給依據與範圍","允許核對時間避免臨改"],speak:["句型：『我會比較安心，如果先把標準說清楚：什麼算完成？什麼不算？』","句型：『我不是挑剔，我是在避免之後反覆。我們先對齊定義。』"]}
+  D:{name:"D（主導）",essence:"你在意推進與結果。事情能被處理、能往前走，你比較安定。"},
+  I:{name:"I（影響）",essence:"你在意連結與互動。被回應、被理解會讓你有力量。"},
+  S:{name:"S（穩定）",essence:"你在意安穩與合作。穩定與可預期會讓你安心。"},
+  C:{name:"C（謹慎）",essence:"你在意正確與一致。標準清楚、邏輯成立你會放鬆。"}
 };
 
 /** =========================
- * 12 種主輔型組合解析（每組不同）
+ * 主輔型組合解析（每組不同）
  * ========================= */
 const COMBO = {
-  DI:{title:"DI（推進＋連結）",lines:["你先推進（D），也在意人有沒有跟上（I）。","你不只要結果，你也要大家願意一起往前。","壓力大時語氣會更直；把催促換成清楚邀請＋期限，互動會更順。"],tip:"先定方向，再把『一起做的下一步』講清楚。"},
-  DS:{title:"DS（推進＋安穩）",lines:["你推進（D），也顧承受度與穩定（S）。","你不喜歡拖，但也不想逼人；會想把人一起帶過去。","盲點是想快又怕壓人；用分工與里程碑把壓力放流程，不放在人。"],tip:"拆小任務＋固定回報節點，速度自然起來。"},
-  DC:{title:"DC（推進＋標準）",lines:["你先推進（D），再用標準收斂（C）。","你敢決定，也不想留下後遺症；會回頭補定義與責任。","壓力大時又快又嚴；用暫定結論＋驗證條件保住速度與安心。"],tip:"用「暫定＋檢核表」代替反覆討論。"},
-  ID:{title:"ID（連結＋推進）",lines:["你先連結（I），再推進（D）。","你能帶動人，也能在關鍵時刻定案。","當你覺得沒回應會急著推；先拿到回應再收斂行動，更省力。"],tip:"先問『你怎麼看？』→ 再收斂下一步與期限。"},
-  IS:{title:"IS（連結＋安穩）",lines:["你要連結（I），也要舒適與穩（S）。","你會照顧氣氛，也會讓人安心。","你容易把需求講太柔，最後自己撐；把感受翻成可執行請求。"],tip:"把『希望你在乎』翻成『我希望你在（時間）回我一句』。"},
-  IC:{title:"IC（連結＋清楚）",lines:["你要被理解（I），也要精準（C）。","你不只想被安慰，你想被正確理解；會補背景避免誤會。","對方跟不上你會越講越多；先一句結論＋兩個重點，再補例子。"],tip:"先一句結論→兩個重點→最後才細節。"},
-  SD:{title:"SD（安穩＋推進）",lines:["你重穩（S），必要時也能推（D）。","你先維持和氣，但拖久了會突然果斷。","你容易忍到最後才說；早一點小表態，界線就不必靠爆發。"],tip:"用『我需要…』的輕量表達，提早說清楚。"},
-  SI:{title:"SI（安穩＋連結）",lines:["你重穩（S），也在意互動溫度（I）。","你願意配合、也願意照顧人，是安心感提供者。","你太會體諒容易把自己放後面；保留體諒，但別消音需求。"],tip:"先肯定對方，再提出一個具體安排。"},
-  SC:{title:"SC（安穩＋標準）",lines:["你要安穩（S），也要一致標準（C）。","你願意配合，但需要流程與規則才安心。","你可能默默補很多卻不說標準；把必要標準說在前面，才能減少補洞。"],tip:"先列 3 個必要標準，其餘允許彈性。"},
-  CD:{title:"CD（標準＋推進）",lines:["你先確保正確（C），確定後推很快（D）。","你不是慢，你是在算清風險；確定後執行力會加速。","外界催快會讓你更緊；先講清你缺的資訊與你多久能定案。"],tip:"一句話說清楚『我缺什麼』＋『拿到後多久能定案』。"},
-  CI:{title:"CI（標準＋連結）",lines:["你重一致（C），也在意被公平理解（I）。","你在守的是不要誤會、不要失信；會想確認對方真的懂。","你容易腦內反覆推演；用具體例子取代抽象解釋更省力。"],tip:"先給例子（發生什麼）→再講標準（你要什麼）。"},
-  CS:{title:"CS（標準＋安穩）",lines:["你重標準（C），也重穩定（S）。","你把事做對、也把人顧好；可靠但容易累。","你不想麻煩別人就自己補；訂出回報格式與完成定義，你會輕很多。"],tip:"你負責標準與結論；對方負責配合與回報。"},
+  DI:{title:"DI（推進＋連結）",lines:["你先推進，也在意人有沒有跟上。","你不只要結果，也要大家願意一起往前。","壓力大時容易更直；把催促換成清楚邀請＋期限會更順。"]},
+  DS:{title:"DS（推進＋安穩）",lines:["你推進，同時顧承受度與穩定。","你不喜歡拖，但也不想逼人。","用分工/里程碑把壓力放流程，不放在人。"]},
+  DC:{title:"DC（推進＋標準）",lines:["你先推進，再用標準收斂。","你敢決定，也不想留後遺症。","用暫定結論＋驗證條件能同時保速度與安心。"]},
+  ID:{title:"ID（連結＋推進）",lines:["你先建立互動，再推進行動。","你能帶動人，也能在關鍵時刻定案。","先拿到回應再收斂下一步，推進更省力。"]},
+  IS:{title:"IS（連結＋安穩）",lines:["你要連結，也要舒適與穩。","你會照顧氣氛、讓人安心。","把感受翻成可執行請求，避免自己一直撐。"]},
+  IC:{title:"IC（連結＋清楚）",lines:["你要被理解，也要精準。","你不只想被安慰，你想被正確理解。","先一句結論＋兩個重點，再補例子。"]},
+  SD:{title:"SD（安穩＋推進）",lines:["你重穩，必要時也能推。","你先維持和氣，拖久了會突然果斷。","提早小表態，界線就不用靠爆發。"]},
+  SI:{title:"SI（安穩＋連結）",lines:["你重穩，也在意互動溫度。","你願意配合、也願意照顧人。","別把需求消音：先肯定再提出一個具體安排。"]},
+  SC:{title:"SC（安穩＋標準）",lines:["你要安穩，也要一致標準。","你願意配合，但需要流程與規則才安心。","先說必要標準，能減少你後面補洞。"]},
+  CD:{title:"CD（標準＋推進）",lines:["你先確保正確，確定後推很快。","你不是慢，是在算風險。","先講清缺的資訊＋多久能定案，別人就會跟上。"]},
+  CI:{title:"CI（標準＋連結）",lines:["你重一致，也在意被公平理解。","你在守護不要誤會、不要失信。","用具體例子取代抽象解釋，內耗會下降。"]},
+  CS:{title:"CS（標準＋安穩）",lines:["你重標準，也重穩定。","你把事做對、也把人顧好。","訂出完成定義與回報格式，你會輕很多。"]},
 };
 
 /** =========================
  * 單一面向作答狀態（不共享）
  * ========================= */
-let currentKey = null;     // 'life' | 'work' | 'love'
+let currentKey = null;         // 'life' | 'work' | 'love'
 let qIndex = 0;
-let answers = [];          // [{qIndex, pickKey}]
+let answers = [];              // [{qIndex, pickKey, pickText}]
 let scores = {D:0,I:0,S:0,C:0};
 
 const $ = (id)=>document.getElementById(id);
+
+function pct(v,total){ return total===0 ? 0 : Math.round((v/total)*100); }
 
 function resetSection(){
   qIndex = 0;
@@ -319,119 +321,68 @@ function classify(scoreObj){
   return {arr,max,second,primary,secondary};
 }
 
-function buildSinglePrimaryAnalysis(p, s, max, second){
-  const gap = max - second;
-  const gapLine = gap >= 3
-    ? "主型很突出：你在這個面向的反應比較一致。"
-    : "差距不大：你在這個面向會依情境切換策略。";
-
-  let comboHTML = "";
-  if(s){
-    const key = `${p}${s}`;
-    const pack = COMBO[key];
-    comboHTML = pack ? `
-      <p class="small">主輔型組合：<b style="color:var(--text)">${pack.title}</b></p>
-      <ul>${pack.lines.map(x=>`<li>${x}</li>`).join("")}</ul>
-      <p class="small muted"><b>建議用法：</b>${pack.tip}</p>
-    ` : `
-      <p class="small">主輔型組合：<b style="color:var(--text)">${p}${s}</b></p>
-      <ul>
-        <li>你以 ${TYPE[p].name} 為主軸，同時帶著 ${TYPE[s].name} 的調節策略。</li>
-        <li>你會在兩種策略之間切換，目的是讓事情或關係更可控。</li>
-      </ul>
+function buildAnswerReview(){
+  const sec = BANK[currentKey];
+  const rows = answers.map(a=>{
+    const q = sec.questions[a.qIndex];
+    const optIndex = q.o.findIndex(x=>x.k===a.pickKey && x.t===a.pickText);
+    const letter = (optIndex>=0) ? String.fromCharCode(65+optIndex) : "";
+    return `
+      <tr>
+        <td class="mono" style="width:80px">第 ${a.qIndex+1} 題</td>
+        <td>${escapeHtml(q.q)}</td>
+        <td><b style="color:var(--accent)">${escapeHtml(a.pickKey)}</b> ${letter ? `（${letter}）` : ""}<br><span class="small">${escapeHtml(a.pickText)}</span></td>
+      </tr>
     `;
-  } else {
-    comboHTML = `
-      <p class="small">輔型不明顯（分數接近）。你在此面向更擅長看情境選方法。</p>
-      <ul>
-        <li>你不是沒有主軸，而是你有更多工具可以用。</li>
-        <li>你容易累的點，常來自界線/分工/標準沒有說清楚。</li>
-      </ul>
-    `;
-  }
+  }).join("");
 
   return `
     <div class="box" style="margin-top:12px">
-      <h2 style="margin-top:0">解析</h2>
-      <p><b>${TYPE[p].name}</b>：${TYPE[p].essence}</p>
-      <p class="small">${gapLine}</p>
-
-      <div class="box" style="margin-top:10px">
-        <h2 style="margin-top:0">主輔型搭配說明</h2>
-        ${comboHTML}
-      </div>
-
-      <div class="grid" style="margin-top:10px">
-        <div class="box">
-          <h2 style="margin-top:0">核心模式</h2>
-          <ul>
-            <li><b>常見觸發點：</b>${TYPE[p].stress[0]}</li>
-            <li><b>你會怎麼保護自己：</b>${TYPE[p].shadow}</li>
-            <li><b>你其實在守護的是：</b>${TYPE[p].needs[0]}</li>
-          </ul>
-        </div>
-        <div class="box">
-          <h2 style="margin-top:0">回到穩定的方式</h2>
-          <ul>${TYPE[p].repair.map(x=>`<li>${x}</li>`).join("")}</ul>
-        </div>
-      </div>
+      <h2 style="margin-top:0">作答紀錄</h2>
+      <table class="table">
+        <thead><tr><th>題號</th><th>題目</th><th>你的選擇</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
     </div>
-  `;
-}
-
-function buildMultiPrimaryAnalysis(primary){
-  const names = primary.map(k=>TYPE[k].name).join("、");
-  return `
-    <div class="box" style="margin-top:12px">
-      <h2 style="margin-top:0">解析（並列主型）</h2>
-      <p>你呈現「並列主型（${names}）」。這通常表示你在此面向會依情境啟用不同策略。</p>
-      <p class="small">若想更清楚哪一個更像核心，可擴充題數或把題目改得更貼近你常遇到的真實情境。</p>
-    </div>
-  `;
-}
-
-function buildHowToTreat(primary, secondary){
-  if(primary.length===1){
-    const p = primary[0];
-    const s = (secondary.length===1) ? secondary[0] : null;
-    const extra = s ? `<p class="small">輔型加分（${TYPE[s].name}）：${TYPE[s].howToTreat[0]}。</p>` : "";
-    return `<ul>${TYPE[p].howToTreat.map(x=>`<li>${x}</li>`).join("")}</ul>${extra}`;
-  }
-  return `
-    <ul>
-      <li>先用一段話把下一步與範圍講清楚。</li>
-      <li>把期待落到可執行：何時、做什麼、怎麼回報。</li>
-      <li>用一句話確認彼此理解，避免用猜的。</li>
-    </ul>
-  `;
-}
-
-function buildSpeak(primary, secondary){
-  if(primary.length===1){
-    const p = primary[0];
-    const s = (secondary.length===1) ? secondary[0] : null;
-    const extra = s ? `<p class="small">輔型提醒：你用 ${TYPE[s].name} 的方式調節時，互動通常更順。</p>` : "";
-    return `<ul>${TYPE[p].speak.map(x=>`<li>${x}</li>`).join("")}</ul>${extra}`;
-  }
-  return `
-    <ul>
-      <li>先說狀態：我現在有點…</li>
-      <li>再說事實：因為發生了…</li>
-      <li>最後說請求：我需要你…／我們可不可以…</li>
-    </ul>
   `;
 }
 
 function buildResult(){
   const total = Object.values(scores).reduce((a,b)=>a+b,0);
-  const {arr,primary,secondary,max,second} = classify(scores);
+  const {arr,primary,secondary} = classify(scores);
+
+  const pKey = (primary.length===1) ? primary[0] : primary[0];
+  const sKey = (secondary.length===1) ? secondary[0] : (primary.length===1 ? null : null);
 
   const pText = primary.length===1 ? TYPE[primary[0]].name : `並列主型：${primary.map(k=>TYPE[k].name).join("、")}`;
   const sText = secondary.length===1 ? TYPE[secondary[0]].name : (secondary.length ? `並列輔型：${secondary.map(k=>TYPE[k].name).join("、")}` : "輔型不明顯（分數接近）");
 
-  const analysis = (primary.length===1)
-    ? buildSinglePrimaryAnalysis(primary[0], secondary.length===1 ? secondary[0] : null, max, second)
-    : buildMultiPrimaryAnalysis(primary);
+  let comboHtml = "";
+  if(primary.length===1 && secondary.length===1){
+    const key = `${pKey}${sKey}`;
+    const pack = COMBO[key];
+    comboHtml = pack ? `
+      <div class="box" style="margin-top:12px">
+        <h2 style="margin-top:0">解析</h2>
+        <p class="small">主輔型組合：<b style="color:var(--text)">${pack.title}</b></p>
+        <ul>${pack.lines.map(x=>`<li>${x}</li>`).join("")}</ul>
+      </div>
+    ` : "";
+  } else if(primary.length===1 && secondary.length===0){
+    comboHtml = `
+      <div class="box" style="margin-top:12px">
+        <h2 style="margin-top:0">解析</h2>
+        <p>你的主型是 <b>${TYPE[primary[0]].name}</b>。輔型分數較接近，代表你會依情境切換策略。</p>
+      </div>
+    `;
+  } else {
+    comboHtml = `
+      <div class="box" style="margin-top:12px">
+        <h2 style="margin-top:0">解析</h2>
+        <p>你呈現「並列主型」。這通常代表你在這個面向會依情境啟用不同策略。</p>
+      </div>
+    `;
+  }
 
   return `
     <div class="box">
@@ -453,18 +404,13 @@ function buildResult(){
         </tbody>
       </table>
 
-      ${analysis}
-
-      <div class="grid" style="margin-top:12px">
-        <div class="box">
-          <h2 style="margin-top:0">你在這個面向裡，最需要被怎麼對待</h2>
-          ${buildHowToTreat(primary, secondary)}
-        </div>
-        <div class="box">
-          <h2 style="margin-top:0">你可以怎麼說，既保護自己也不把關係推遠</h2>
-          ${buildSpeak(primary, secondary)}
-        </div>
+      <div class="box" style="margin-top:12px">
+        <h2 style="margin-top:0">主型重點</h2>
+        <p><b>${TYPE[primary[0]].name}</b>：${TYPE[primary[0]].essence}</p>
       </div>
+
+      ${comboHtml}
+      ${buildAnswerReview()}
     </div>
   `;
 }
@@ -505,12 +451,12 @@ function renderMenu(){
 
 function renderQuestion(){
   const sec = BANK[currentKey];
-  $("qPill").innerHTML = `<b style="color:var(--accent)">第 ${qIndex+1} / ${sec.questions.length} 題</b>`;
+  $("qPill").innerHTML = `<b style="color:var(--accent)">第 ${Math.min(qIndex+1, sec.questions.length)} / ${sec.questions.length} 題</b>`;
   $("backBtn").disabled = qIndex === 0;
 
-  // 完成
+  // ✅ 完成後：立刻顯示結果＋作答紀錄
   if(qIndex >= sec.questions.length){
-    $("question").textContent = "已完成";
+    $("question").textContent = "已完成（已產出結果與作答紀錄）";
     $("options").innerHTML = "";
     $("result").innerHTML = buildResult();
     return;
@@ -530,7 +476,8 @@ function renderQuestion(){
 }
 
 function pick(opt){
-  answers.push({qIndex, pickKey: opt.k});
+  // 記錄答案（含文字）讓完成後能列出「答案/作答紀錄」
+  answers.push({qIndex, pickKey: opt.k, pickText: opt.t});
   scores[opt.k] += 1;
   qIndex += 1;
   renderQuestion();
@@ -538,7 +485,6 @@ function pick(opt){
 
 function back(){
   if(qIndex === 0) return;
-  // 退回一題：扣掉分數
   const last = answers.pop();
   if(last){
     scores[last.pickKey] -= 1;
