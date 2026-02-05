@@ -3,198 +3,539 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>DISC 行為測驗</title>
+  <title>DISC 行為測驗（10題）</title>
   <style>
-    body{
-      font-family:"Noto Sans TC","Microsoft JhengHei",sans-serif;
-      background:#0b1220;
-      color:#e9eefc;
-      margin:0;
+    :root{
+      --bg:#0b1220; --card:#121b2e; --line:#24304c;
+      --text:#e9eefc; --muted:#b7c0da; --btn:#1e2a46; --btn2:#2b3a6b;
+      --accent:#7aa2ff;
     }
-    .wrap{
-      max-width:800px;
-      margin:auto;
-      padding:20px;
-    }
-    .card{
-      background:#121b2e;
-      border-radius:14px;
-      padding:22px;
-    }
-    h1{margin-top:0}
-    .progress{
-      font-size:14px;
-      color:#b7c0da;
-      margin-bottom:10px;
-    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:"Noto Sans TC","Microsoft JhengHei",system-ui,sans-serif;background:var(--bg);color:var(--text)}
+    .wrap{max-width:900px;margin:0 auto;padding:18px}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px}
+    h1{margin:0 0 10px;font-size:22px}
+    h2{margin:14px 0 8px;font-size:18px}
+    p{margin:8px 0;line-height:1.7;color:var(--muted)}
+    .progress{display:flex;justify-content:space-between;gap:10px;align-items:center;color:var(--muted);font-size:14px}
+    .bar{height:10px;background:#0e1630;border:1px solid var(--line);border-radius:999px;overflow:hidden;margin-top:10px}
+    .fill{height:100%;width:0%;background:linear-gradient(90deg,#7aa2ff,#a77bff)}
+    .q{font-size:18px;color:var(--text);margin-top:14px}
+    .opts{margin-top:10px;display:grid;gap:10px}
     button{
-      width:100%;
-      padding:14px;
-      margin-top:10px;
-      border-radius:10px;
-      border:none;
-      background:#1e2a46;
-      color:#fff;
-      font-size:16px;
-      cursor:pointer;
+      width:100%;text-align:left;padding:14px;border-radius:12px;border:1px solid var(--line);
+      background:var(--btn);color:var(--text);font-size:16px;cursor:pointer
     }
-    button:hover{background:#2b3a6b}
-    .opt{margin-top:8px}
-    .result{
-      line-height:1.7;
-    }
+    button:hover{background:var(--btn2)}
+    .footer{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+    button.secondary{background:transparent;color:var(--muted)}
+    button.secondary:hover{background:#0e1630}
+    .tag{display:inline-block;border:1px solid var(--line);border-radius:999px;padding:5px 10px;margin:6px 6px 0 0;color:var(--muted);font-size:13px}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    @media (max-width:760px){.grid{grid-template-columns:1fr}}
+    .box{background:#0e1630;border:1px solid var(--line);border-radius:14px;padding:14px}
+    ul{margin:8px 0 0 18px;color:var(--text);line-height:1.7}
+    li{margin:4px 0}
+    .small{font-size:13px;color:var(--muted)}
+    .warn{color:#ffd37a}
+    .mono{font-family:ui-monospace,Consolas,monospace}
+    .table{width:100%;border-collapse:collapse;margin-top:8px}
+    .table th,.table td{border-bottom:1px solid var(--line);padding:10px 6px;text-align:left}
   </style>
 </head>
 <body>
-
 <div class="wrap">
   <div class="card">
-    <h1 id="title">DISC 行為測驗</h1>
-    <div class="progress" id="progress"></div>
-    <p id="question">按開始進行測驗</p>
-    <div id="options"></div>
-    <button id="startBtn">開始</button>
+    <h1 id="title">DISC 行為測驗（10 題）</h1>
+
+    <div class="progress">
+      <div id="progressText">尚未開始</div>
+      <div class="small" id="ruleText">原則：選「你多數情境下最常出現的反應」</div>
+    </div>
+    <div class="bar"><div class="fill" id="progressFill"></div></div>
+
+    <div class="q" id="question">按「開始」進行測驗</div>
+    <div class="opts" id="options"></div>
+
+    <div class="footer">
+      <button id="startBtn">開始</button>
+      <button class="secondary" id="backBtn" disabled>上一題</button>
+      <button class="secondary" id="resetBtn">重設</button>
+    </div>
+
+    <div id="result" style="margin-top:14px"></div>
   </div>
 </div>
 
 <script>
+/** =========================
+ *  題庫（鎖定）：使用者看得到題目，但不能在頁面上編輯題庫
+ *  你要改題目，只改這裡的文字即可
+ * ========================= */
 const questions = [
-  {
-    q:"當事情資訊還不完整，但時間已經在倒數時，你通常會？",
+  { q:"當事情資訊還不完整，但時間已經在倒數時，你通常會？",
     o:[
       {k:"D",t:"先行動再修正，不能卡在原地"},
       {k:"I",t:"找人討論，看看大家怎麼想"},
-      {k:"S",t:"先穩住現況，避免出錯"},
-      {k:"C",t:"補齊資訊後再做決定"}
-    ]
-  },
-  {
-    q:"面對不同意見甚至有點衝突時，你比較常出現的反應是？",
+      {k:"S",t:"先穩住現況，避免造成他人負擔"},
+      {k:"C",t:"補齊資訊與依據後再做決定"}
+    ]},
+  { q:"面對不同意見甚至有點衝突時，你比較常出現的反應是？",
     o:[
-      {k:"D",t:"直接說立場，事情要有效率"},
-      {k:"I",t:"用圓融方式表達，顧氣氛"},
-      {k:"S",t:"先退一步，觀察對方反應"},
-      {k:"C",t:"把邏輯與依據講清楚"}
-    ]
-  },
-  {
-    q:"在節奏混亂、標準不清楚的環境中，你會先做什麼？",
+      {k:"D",t:"直接說立場，事情要有效率、有結論"},
+      {k:"I",t:"用圓融方式表達，盡量顧到氣氛"},
+      {k:"S",t:"先退一步，觀察對方狀態再回應"},
+      {k:"C",t:"把邏輯與依據講清楚，避免誤解"}
+    ]},
+  { q:"在節奏混亂、標準不清楚的環境中，你通常會先做什麼？",
     o:[
-      {k:"D",t:"直接把方向定下來"},
-      {k:"I",t:"透過溝通拉回共識"},
-      {k:"S",t:"先配合現況穩住"},
-      {k:"C",t:"先釐清流程與規則"}
-    ]
-  },
-  {
-    q:"當你感到壓力變大時，最主要的來源通常是？",
+      {k:"D",t:"先把方向定下來，讓事情能推進"},
+      {k:"I",t:"先把人拉在一起，讓大家回到共識"},
+      {k:"S",t:"先配合現況穩住，避免團隊動盪"},
+      {k:"C",t:"先釐清流程、規則、定義，才安心"}
+    ]},
+  { q:"當你感到壓力變大時，最主要的來源通常是？",
     o:[
-      {k:"D",t:"事情卡住、進度太慢"},
-      {k:"I",t:"互動不順、氣氛不好"},
-      {k:"S",t:"被要求太多、顧太多人"},
-      {k:"C",t:"標準不清楚、一直被改"}
-    ]
-  },
-  {
-    q:"和他人合作一件事情時，你內在最在意的是？",
+      {k:"D",t:"事情卡住、效率低、進度被拖慢"},
+      {k:"I",t:"互動不順、氣氛不好、被忽略"},
+      {k:"S",t:"要求太多、顧太多人、被逼太急"},
+      {k:"C",t:"標準不清楚、規則一直變、細節粗糙"}
+    ]},
+  { q:"和他人合作一件事情時，你內在最在意的是？",
     o:[
-      {k:"D",t:"誰負責、誰決定"},
-      {k:"I",t:"互動順不順、有沒有共識"},
-      {k:"S",t:"相處是否舒服"},
-      {k:"C",t:"分工與責任是否清楚"}
-    ]
-  },
-  {
-    q:"當你收到他人對你的批評或建議時，你通常會？",
+      {k:"D",t:"誰負責、誰決定，避免扯皮"},
+      {k:"I",t:"互動順不順、有沒有共識與動力"},
+      {k:"S",t:"相處是否舒服、彼此是否被尊重"},
+      {k:"C",t:"分工與責任是否清楚、可被追蹤"}
+    ]},
+  { q:"當你收到他人對你的批評或建議時，你通常會？",
     o:[
-      {k:"D",t:"先判斷有沒有用"},
-      {k:"I",t:"在意對方怎麼說、語氣如何"},
-      {k:"S",t:"先反省是不是自己沒顧好"},
-      {k:"C",t:"分析內容是否合理"}
-    ]
-  },
-  {
-    q:"如果你的做法可能讓別人感到壓力，你比較常？",
+      {k:"D",t:"先判斷有沒有用，沒用就略過"},
+      {k:"I",t:"在意對方怎麼說、語氣和氛圍"},
+      {k:"S",t:"先反省自己是不是讓對方不舒服"},
+      {k:"C",t:"分析內容是否合理、依據在哪裡"}
+    ]},
+  { q:"如果你的做法可能讓別人感到壓力，你比較常？",
     o:[
-      {k:"D",t:"方向對比較重要"},
-      {k:"I",t:"多說明、多鼓勵"},
-      {k:"S",t:"調整自己，避免對方不舒服"},
-      {k:"C",t:"檢視流程是不是有問題"}
-    ]
-  },
-  {
-    q:"一件事沒有人要求你做，但你覺得可以更好時，你會？",
+      {k:"D",t:"只要方向對，短期壓力可以承受"},
+      {k:"I",t:"多說明、多鼓勵，讓對方願意跟"},
+      {k:"S",t:"調整自己，避免對方承受太多"},
+      {k:"C",t:"回頭檢查流程/設計是否造成壓力"}
+    ]},
+  { q:"一件事沒有人要求你做，但你覺得可以更好時，你會？",
     o:[
-      {k:"D",t:"視重要性再決定要不要做"},
-      {k:"I",t:"如果能讓團隊更順就補"},
-      {k:"S",t:"默默把它補好"},
-      {k:"C",t:"做到符合自己標準才安心"}
-    ]
-  },
-  {
-    q:"當需要你做出決定時，你通常比較依賴的是？",
+      {k:"D",t:"視重要性與時效，必要才追加"},
+      {k:"I",t:"若能讓團隊更順，我願意多補一點"},
+      {k:"S",t:"默默把它補好，不想造成他人困擾"},
+      {k:"C",t:"做到符合標準/品質，才覺得安心"}
+    ]},
+  { q:"需要做決定時，你比較依賴的是？",
     o:[
-      {k:"D",t:"直覺與判斷速度"},
-      {k:"I",t:"他人的回饋與反應"},
-      {k:"S",t:"過往經驗與穩定性"},
-      {k:"C",t:"資料、邏輯與分析"}
-    ]
-  },
-  {
-    q:"回顧自己多數時候的工作狀態，你最像哪一種？",
+      {k:"D",t:"直覺與判斷速度（先定再調）"},
+      {k:"I",t:"他人的回饋與感受（先對齊再定）"},
+      {k:"S",t:"過往經驗與穩定性（先確保不翻車）"},
+      {k:"C",t:"資料、邏輯與分析（先驗證再定）"}
+    ]},
+  { q:"回顧自己多數時候的工作狀態，你最像哪一種？",
     o:[
-      {k:"D",t:"推進事情的人"},
-      {k:"I",t:"帶動氣氛的人"},
-      {k:"S",t:"穩住團隊的人"},
-      {k:"C",t:"把事情做對的人"}
-    ]
-  }
+      {k:"D",t:"推進事情、定方向、扛結果的人"},
+      {k:"I",t:"帶動氣氛、串聯人、推動共識的人"},
+      {k:"S",t:"穩住團隊、支持他人、維持合作的人"},
+      {k:"C",t:"把事情做對、控品質、補漏洞的人"}
+    ]}
 ];
 
-let index = 0;
+/** =========================
+ *  結果文案（可自行調整）
+ * ========================= */
+const TYPE = {
+  D: {
+    name: "D（主導）",
+    core: "重視結果與效率，偏好快速定方向、推進決策。",
+    strengths: ["決策快、敢承擔", "目標清楚、推進力強", "遇到壓力能快速收斂行動"],
+    blindspots: ["溝通可能偏直接，容易被感受到壓力", "忽略他人節奏與細節風險", "不耐久談，對模糊狀態容忍低"],
+    stress: ["效率低、拖延、沒有結論", "權責不清、卡關", "被過度約束、無法做主"],
+    comm: ["先講結論、目標與期限", "提供選項與你需要的回覆格式", "少鋪陳、多里程碑"]
+  },
+  I: {
+    name: "I（影響）",
+    core: "重視互動與氛圍，擅長連結人、推動共識與動機。",
+    strengths: ["溝通感染力強、能帶動", "擅長說服與建立關係", "能把冷場變成可合作的場"],
+    blindspots: ["可能高估口頭共識、忽略落地細節", "容易受外界回饋影響判斷", "對規範/流程可能耐受度較低"],
+    stress: ["被忽略、互動冷、缺少回應", "氣氛僵、衝突未被處理", "被要求只看數據不看人"],
+    comm: ["先肯定再談改進", "用故事/例子說重點", "明確給回饋與舞台，但也要定下行動步驟"]
+  },
+  S: {
+    name: "S（穩定）",
+    core: "重視穩定與合作，擅長陪跑、支持與維持團隊節奏。",
+    strengths: ["耐心、可靠、願意支持他人", "擅長維持合作與穩定輸出", "重視一致性與可預期"],
+    blindspots: ["不喜歡衝突，可能延後表態", "被催得太急時容易壓力累積", "有時過度顧全，忽略自己負荷"],
+    stress: ["變動太快、臨時改", "被逼表態、衝突多", "被要求立即改變習慣"],
+    comm: ["先說原因與影響，再談改法", "給緩衝與步驟、預告變更", "用『一起做到』取代『你要快點』"]
+  },
+  C: {
+    name: "C（謹慎）",
+    core: "重視正確與標準，偏好清楚定義、依據、流程與品質。",
+    strengths: ["邏輯清楚、能驗證與控風險", "重品質、能補漏洞與做優化", "適合制度/流程/訓練架構設計"],
+    blindspots: ["在資訊不足時容易猶豫", "標準過高時影響速度或他人承受度", "容易把責任內化，過度自我校正"],
+    stress: ["規則不清、標準一直變", "粗糙與不一致", "被迫在資訊不足下決策"],
+    comm: ["先給依據、定義與範圍", "把標準、例外、截止條件講清楚", "允許思考時間，避免臨時變更"]
+  }
+};
+
+/** =========================
+ *  小工具：主型/輔型判斷規則
+ *  - 主型：最高分
+ *  - 輔型：次高分
+ *  - 若有並列：顯示「並列主型/並列輔型」
+ * ========================= */
+const $ = (id)=>document.getElementById(id);
+
+let idx = -1;                 // -1 未開始；0..n-1 題目中；n 完成
+let answers = [];             // 每題記錄 {key, text}
 let score = {D:0,I:0,S:0,C:0};
 
+function resetAll(){
+  idx = -1;
+  answers = [];
+  score = {D:0,I:0,S:0,C:0};
+  $("startBtn").style.display = "";
+  $("backBtn").disabled = true;
+  $("result").innerHTML = "";
+  render();
+}
+
+function calcScore(){
+  score = {D:0,I:0,S:0,C:0};
+  for(const a of answers) score[a.key] += 1;
+}
+
+function start(){
+  idx = 0;
+  $("startBtn").style.display = "none";
+  render();
+}
+
+function back(){
+  if(idx <= 0) return;
+  idx -= 1;
+  answers = answers.slice(0, idx); // 回上一題就截斷後面的答案
+  render();
+}
+
+function pick(opt){
+  // 截斷後面（支援回上一題重選）
+  answers = answers.slice(0, idx);
+  answers.push({key: opt.k, text: opt.t});
+  idx += 1;
+  render();
+}
+
 function render(){
-  if(index >= questions.length){
-    document.getElementById("title").innerText = "測驗完成";
-    document.getElementById("progress").innerText = "";
-    document.getElementById("question").innerHTML = `
-      <div class="result">
-        <b>你的分數結果：</b><br>
-        D（主導）：${score.D}<br>
-        I（影響）：${score.I}<br>
-        S（穩定）：${score.S}<br>
-        C（謹慎）：${score.C}<br><br>
-        分數最高者為你的主要 DISC 傾向。
-      </div>`;
-    document.getElementById("options").innerHTML = "";
+  const total = questions.length;
+  const answered = Math.max(0, Math.min(idx, total));
+
+  // 進度
+  if(idx < 0){
+    $("progressText").textContent = "尚未開始";
+    $("progressFill").style.width = "0%";
+    $("question").textContent = "按「開始」進行測驗";
+    $("options").innerHTML = "";
     return;
   }
 
-  document.getElementById("progress").innerText =
-    `第 ${index+1} 題 / 共 ${questions.length} 題`;
-  document.getElementById("question").innerText = questions[index].q;
+  $("progressText").textContent = `第 ${Math.min(idx+1, total)} / 共 ${total} 題`;
+  $("progressFill").style.width = `${Math.round((answered/total)*100)}%`;
+  $("backBtn").disabled = idx <= 0;
 
-  const box = document.getElementById("options");
+  // 完成
+  if(idx >= total){
+    calcScore();
+    $("question").textContent = "已完成作答";
+    $("options").innerHTML = "";
+    $("result").innerHTML = buildResultHTML();
+    return;
+  }
+
+  // 題目
+  const q = questions[idx];
+  $("question").innerHTML = `<span style="color:var(--accent);font-weight:700">第 ${idx+1} 題</span>　${escapeHtml(q.q)}`;
+
+  const box = $("options");
   box.innerHTML = "";
-  questions[index].o.forEach(opt=>{
+  q.o.forEach((opt, i)=>{
     const b = document.createElement("button");
-    b.className = "opt";
-    b.innerText = opt.t;
-    b.onclick = ()=>{
-      score[opt.k]++;
-      index++;
-      render();
-    };
+    b.innerHTML = `<b style="color:var(--accent)">(${String.fromCharCode(65+i)})</b> ${escapeHtml(opt.t)}`;
+    b.onclick = ()=>pick(opt);
     box.appendChild(b);
   });
 }
 
-document.getElementById("startBtn").onclick = ()=>{
-  document.getElementById("startBtn").style.display="none";
-  render();
-};
-</script>
+function escapeHtml(str){
+  return String(str).replace(/[&<>"']/g, s => ({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+  }[s]));
+}
 
+function sortedScores(){
+  const arr = Object.entries(score).map(([k,v])=>({k,v}));
+  arr.sort((a,b)=> b.v - a.v);
+  return arr;
+}
+
+function classify(){
+  const arr = sortedScores();
+  const max = arr[0].v;
+  const second = arr.find(x=>x.v < max)?.v ?? max; // 若全並列，second=max
+
+  const primary = arr.filter(x=>x.v === max).map(x=>x.k);
+  const secondary = arr.filter(x=>x.v === second && !primary.includes(x.k)).map(x=>x.k);
+
+  return { primary, secondary, arr };
+}
+
+function pct(v,total){ return total===0 ? 0 : Math.round(v/total*100); }
+
+function buildResultHTML(){
+  const total = questions.length;
+  const {primary, secondary, arr} = classify();
+
+  // 主/輔型文字
+  const pText = primary.length===1 ? TYPE[primary[0]].name : `並列主型：${primary.map(k=>TYPE[k].name).join("、")}`;
+  const sText = secondary.length===1 ? TYPE[secondary[0]].name : (secondary.length>1 ? `並列輔型：${secondary.map(k=>TYPE[k].name).join("、")}` : "輔型不明顯（分數接近）");
+
+  // 解讀：若主型並列，用「共同點」＋各型簡述；若主型單一，用主型細寫＋輔型修飾
+  const narrative = buildNarrative(primary, secondary);
+
+  return `
+    <div class="box">
+      <h2 style="margin-top:0">結果總覽</h2>
+      <div class="tag">主型：<b style="color:var(--text)">${pText}</b></div>
+      <div class="tag">輔型：<b style="color:var(--text)">${sText}</b></div>
+      <div class="tag">題數：${total}</div>
+      <div class="tag">信度提示：<span class="warn">10 題屬於輪廓判斷</span>（若要更精準可擴充到 16/24 題）</div>
+
+      <h2>分數分布</h2>
+      <table class="table">
+        <thead><tr><th>向度</th><th>分數</th><th>比例</th></tr></thead>
+        <tbody>
+          ${arr.map(x=>`
+            <tr>
+              <td>${TYPE[x.k].name}</td>
+              <td>${x.v}</td>
+              <td>${pct(x.v,total)}%</td>
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>
+    </div>
+
+    ${narrative}
+
+    <div class="grid" style="margin-top:12px">
+      <div class="box">
+        <h2 style="margin-top:0">你有效的溝通方式（對方要怎麼跟你講）</h2>
+        ${buildCommBlock(primary, secondary)}
+      </div>
+      <div class="box">
+        <h2 style="margin-top:0">你對別人更有效的說法（你要怎麼講）</h2>
+        ${buildHowToSpeak(primary, secondary)}
+      </div>
+    </div>
+
+    <div class="box" style="margin-top:12px">
+      <h2 style="margin-top:0">實務提醒（降低內耗／提升協作）</h2>
+      ${buildPracticalTips(primary, secondary)}
+    </div>
+  `;
+}
+
+function buildNarrative(primary, secondary){
+  // 主型單一：主型為核心，輔型做修飾
+  if(primary.length === 1){
+    const p = primary[0];
+    const s = secondary.length === 1 ? secondary[0] : null;
+
+    const sLine = s ? `你的輔型帶有「${TYPE[s].name}」的調節特徵，常表現在：${TYPE[s].core}` : "你的分數分布較平均，代表你可能會因角色與情境切換風格。";
+
+    return `
+      <div class="box" style="margin-top:12px">
+        <h2 style="margin-top:0">行為解讀</h2>
+        <p><b>${TYPE[p].name}</b>：${TYPE[p].core}</p>
+        <p>${sLine}</p>
+
+        <div class="grid" style="margin-top:10px">
+          <div class="box">
+            <h2 style="margin-top:0">優勢</h2>
+            <ul>${TYPE[p].strengths.map(x=>`<li>${x}</li>`).join("")}</ul>
+          </div>
+          <div class="box">
+            <h2 style="margin-top:0">盲點與風險</h2>
+            <ul>${TYPE[p].blindspots.map(x=>`<li>${x}</li>`).join("")}</ul>
+          </div>
+        </div>
+
+        <div class="grid" style="margin-top:10px">
+          <div class="box">
+            <h2 style="margin-top:0">壓力來源</h2>
+            <ul>${TYPE[p].stress.map(x=>`<li>${x}</li>`).join("")}</ul>
+          </div>
+          <div class="box">
+            <h2 style="margin-top:0">你在壓力下可能的表現</h2>
+            ${buildStressBehavior(p, s)}
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  // 主型並列：說明「混合主型」
+  const names = primary.map(k=>TYPE[k].name).join("、");
+  const mix = `
+    <p>你的主型呈現並列（${names}），代表你在不同情境下會啟用不同策略：在某些場合你更偏向「推進/影響/穩定/標準」，在另一些場合又會切換到另一套做法。</p>
+    <p class="small">建議：若要更清楚主型優先順序，可把題目擴到 16/24 題，或用更貼近工作場景的題目做第二輪。</p>
+  `;
+
+  return `
+    <div class="box" style="margin-top:12px">
+      <h2 style="margin-top:0">行為解讀（並列主型）</h2>
+      ${mix}
+      <div class="grid" style="margin-top:10px">
+        ${primary.map(k=>`
+          <div class="box">
+            <h2 style="margin-top:0">${TYPE[k].name}</h2>
+            <p>${TYPE[k].core}</p>
+            <div class="small">常見優勢：${TYPE[k].strengths.slice(0,2).join("、")}</div>
+          </div>
+        `).join("")}
+      </div>
+    </div>
+  `;
+}
+
+function buildStressBehavior(p, s){
+  // 以主型為主，若有輔型補一句常見的「壓力下偏移」
+  const map = {
+    D: ["更直接、更快要求結果", "耐心下降，容易強硬定調"],
+    I: ["更在意回應與認同", "容易把焦點放在人與氛圍"],
+    S: ["更想維持穩定，傾向忍耐或延後衝突", "容易把壓力往內吞"],
+    C: ["更想把標準釐清，反覆驗證", "可能變得挑剔或難以放手"]
+  };
+  const base = `<ul>${map[p].map(x=>`<li>${x}</li>`).join("")}</ul>`;
+  if(!s) return base;
+
+  // 輔型調節：常見「主型壓力下向輔型靠近」或「輔型被壓扁」
+  const hint = {
+    "CS": "你可能一方面追求標準，一方面又顧及他人承受度，容易出現內在拉扯。",
+    "CD": "你可能在驗證後突然加速定調，旁人會感受到你『忽然變快/變硬』。",
+    "SC": "你可能為了穩定而把問題做得更保守、更難推進。",
+    "SD": "你可能為了不拖累而硬撐推進，但內在壓力增加。",
+    "ID": "你可能為了帶動而加大推進力，語氣更強。",
+    "IC": "你可能在被質疑時更想證明依據，溝通變得更長。"
+  }[`${p}${s}`] || null;
+
+  return hint ? `${base}<p class="small warn">補充：${hint}</p>` : base;
+}
+
+function buildCommBlock(primary, secondary){
+  // 對方要怎麼跟你講：以主型為主，輔型補一條
+  if(primary.length === 1){
+    const p = primary[0];
+    const s = secondary.length===1 ? secondary[0] : null;
+    const extra = s ? `<p class="small">加分做法（符合輔型 ${TYPE[s].name}）：${TYPE[s].comm[0]}</p>` : "";
+    return `<ul>${TYPE[p].comm.map(x=>`<li>${x}</li>`).join("")}</ul>${extra}`;
+  }
+  // 主型並列：給共同原則
+  return `
+    <ul>
+      <li>先確認你在當下情境最在意的是「結果/互動/穩定/標準」哪一個。</li>
+      <li>結論要清楚、語氣要對頻、步驟要可執行。</li>
+      <li>避免一次塞滿資訊，分段給：結論 → 原因 → 下一步。</li>
+    </ul>
+  `;
+}
+
+function buildHowToSpeak(primary, secondary){
+  // 你要怎麼跟別人講：用主型推一個「說法模板」
+  if(primary.length === 1){
+    const p = primary[0];
+    const s = secondary.length===1 ? secondary[0] : null;
+
+    const templates = {
+      D: [
+        "模板：『目標是 X；我建議做 A 或 B；我們在（時間）前決定，結果由（角色）負責。』",
+        "若對方慢：『我先暫定 A，這段時間你補資料，明天（時間）我們用資料再調。』"
+      ],
+      I: [
+        "模板：『我想把大家拉到同一個方向；我們先對齊 X，再選 A/B 的做法。』",
+        "避免只有氣氛：最後一定補一句『下一步誰做什麼、什麼時候回報』。"
+      ],
+      S: [
+        "模板：『我希望我們穩穩做到 X；我先把步驟分成 1/2/3；你先做第 1 步就好。』",
+        "遇到衝突：先說影響『這樣會讓流程卡住』，再談需求『我需要你在（時間）前回覆』。"
+      ],
+      C: [
+        "模板：『我們的標準是 X；可接受範圍是 Y；例外情境是 Z；因此我建議做 A。』",
+        "避免變得太長：先丟結論，再給 2–3 個關鍵依據即可。"
+      ]
+    };
+
+    const extra = (s && p !== s) ? `<p class="small">提醒：你的輔型是 ${TYPE[s].name}，你在對人/對節奏上的拿捏會影響效果。</p>` : "";
+    return `<ul>${templates[p].map(x=>`<li>${x}</li>`).join("")}</ul>${extra}`;
+  }
+
+  return `
+    <ul>
+      <li>先用一句話確認目標（結果）＋一句話確認關係（合作）。</li>
+      <li>再把事情落到：誰負責、什麼標準、什麼時間點。</li>
+      <li>避免你同時兼顧四件事：一次只推一個最重要的軸線。</li>
+    </ul>
+  `;
+}
+
+function buildPracticalTips(primary, secondary){
+  // 做成可用的「切割責任／降低內耗」清單（你前面很在意這塊）
+  const tips = [];
+
+  // 通用
+  tips.push("把事情切成三層：①決策（方向/標準/期限）②執行（跟上/回報）③情緒（可做但非義務）。");
+  tips.push("你一旦開始內耗，先問自己：這是在補『標準不清』，還是在替別人扛『節奏責任』？後者就停。");
+
+  // 依主型加一條
+  if(primary.length === 1){
+    const p = primary[0];
+    const add = {
+      D: "你適合把『期限』外顯化：沒期限就容易卡在拉扯與催促。",
+      I: "你適合把『下一步』寫下來：避免只剩共識，沒有落地行動。",
+      S: "你適合練習『溫和但清楚的界線』：先說需求，再說期限，避免一直忍到爆。",
+      C: "你適合練習『結論先行』：先給暫定決策＋驗證清單，避免在資訊不全時停滯。"
+    }[p];
+    tips.push(add);
+  }else{
+    tips.push("你主型並列時，建議加題數或用更貼近工作場景的題目再跑一次，才能看出情境優先順序。");
+  }
+
+  // 若有輔型，給一條「主輔互動提醒」
+  if(primary.length===1 && secondary.length===1){
+    const p = primary[0], s = secondary[0];
+    if(p==="C" && s==="S") tips.push("你容易同時顧『對』與『不傷人』：建議把『決策邊界』說清楚，減少用自我收斂換和諧。");
+    if(p==="C" && s==="D") tips.push("你可能在驗證後突然加速：建議先預告『我會在 X 時間定案』，降低他人被你突然推進的壓力。");
+    if(p==="D" && s==="C") tips.push("你推進很快但也在意正確：建議用『暫定版結論＋驗證條件』，既快又能控風險。");
+    if(p==="S" && s==="C") tips.push("你穩健又重標準：建議避免過度保守，把『必要的標準』和『可彈性的部分』分開。");
+    if(p==="I" && s==="C") tips.push("你表達力強但也想講清楚：建議先用例子說重點，再補依據，避免資訊過載。");
+    if(p==="I" && s==="D") tips.push("你帶動力強也敢推進：建議把推進落到『責任與期限』，避免只靠熱度。");
+  }
+
+  return `<ul>${tips.map(x=>`<li>${x}</li>`).join("")}</ul>`;
+}
+
+/** 綁定按鈕 */
+$("startBtn").addEventListener("click", start);
+$("backBtn").addEventListener("click", back);
+$("resetBtn").addEventListener("click", resetAll);
+
+// 初始化
+resetAll();
+</script>
 </body>
 </html>
