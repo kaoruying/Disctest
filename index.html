@@ -614,7 +614,7 @@ function renderQuestion(){
 
   // 完成：立刻出結果
   if(qIndex >= sec.questions.length){
-    $("question").textContent = "已完成（立刻產出結果）";
+    $("question").textContent = "已完成，結果請見下方";
     $("options").innerHTML = "";
     $("result").innerHTML = buildResult();
     return;
@@ -653,6 +653,7 @@ goHome();
 </script>
 </body>
 </html>
+
 
 
 
