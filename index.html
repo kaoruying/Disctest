@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>DISC 三面向測驗（生活／工作／感情）</title>
+  <title>DISC 三面向測驗（連續作答＋整合報告）</title>
   <style>
     :root{
       --bg:#0b1220; --card:#121b2e; --line:#24304c;
@@ -40,15 +40,16 @@
     li{margin:5px 0}
     .table{width:100%;border-collapse:collapse;margin-top:8px}
     .table th,.table td{border-bottom:1px solid var(--line);padding:10px 6px;text-align:left}
-    .center{display:grid;gap:10px}
     .pill{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border:1px solid var(--line);border-radius:999px;color:var(--muted)}
+    .center{display:grid;gap:10px}
+    .muted{color:var(--muted)}
   </style>
 </head>
 <body>
 <div class="wrap">
   <div class="card">
-    <h1 id="title">DISC 三面向測驗</h1>
-    <p class="small" id="subtitle">先選一個你想探索的面向：生活／工作／感情。每條路徑各 10 題，完成後會給主型＋輔型的詳細說明。</p>
+    <h1 id="title">DISC 三面向測驗（連續作答）</h1>
+    <p class="small" id="subtitle">依序完成：生活 → 工作 → 感情（各 10 題）。最後產出整合報告：每面向主型/輔型＋三面向比較。</p>
 
     <div class="progress">
       <div id="progressText">尚未開始</div>
@@ -56,12 +57,13 @@
     </div>
     <div class="bar"><div class="fill" id="progressFill"></div></div>
 
-    <div id="modePicker" class="center" style="margin-top:12px"></div>
+    <div id="startPanel" class="center" style="margin-top:12px"></div>
 
     <div class="q" id="question" style="display:none"></div>
     <div class="opts" id="options"></div>
 
     <div class="footer">
+      <button id="startBtn">開始</button>
       <button class="secondary" id="backBtn" disabled>上一題</button>
       <button class="secondary" id="resetBtn">重設</button>
     </div>
@@ -72,12 +74,13 @@
 
 <script>
 /** =========================
- * 三條作答路徑：生活／工作／感情（各 10 題）
+ * 題庫：三面向各 10 題（連續作答）
  * ========================= */
 const BANK = {
   life: {
+    key: "life",
     name: "生活面向",
-    intro: "這條路徑會看你在日常節奏、家人朋友互動、變動與壓力下，習慣怎麼保護自己、怎麼維持秩序或關係。",
+    intro: "看你在日常節奏、家人朋友互動、變動與壓力下，習慣怎麼保護自己、怎麼維持秩序或關係。",
     questions: [
       {q:"臨時被打亂原本計畫（例如行程改、事情插隊）時，你最常先做的是？",
        o:[{k:"D",t:"先定新的安排，確保事情能繼續前進"},
@@ -133,8 +136,9 @@ const BANK = {
   },
 
   work: {
+    key: "work",
     name: "工作面向",
-    intro: "這條路徑會看你在責任、效率、流程、協作與壓力下的習慣反應，特別能反映你在職場的主型與輔型。",
+    intro: "看你在責任、效率、流程、協作與壓力下的習慣反應，常能反映你在職場的主型與輔型。",
     questions: [
       {q:"遇到急件但資訊不足時，你最常怎麼做？",
        o:[{k:"D",t:"先做可逆決策，推進再調整"},
@@ -190,8 +194,9 @@ const BANK = {
   },
 
   love: {
+    key: "love",
     name: "感情面向",
-    intro: "這條路徑會看你在親密關係裡對安全感、界線、被理解、被尊重的需要，以及你在不安時的保護方式。",
+    intro: "看你在親密關係裡對安全感、界線、被理解與被尊重的需要，以及你在不安時的保護方式。",
     questions: [
       {q:"當你感覺關係有點不對勁（怪怪的）時，你通常先？",
        o:[{k:"D",t:"直接問清楚，想把狀態拉回來"},
@@ -203,7 +208,7 @@ const BANK = {
           {k:"I",t:"先接住情緒：我在，我聽你說"},
           {k:"S",t:"先安撫與陪伴，讓他慢慢穩下來"},
           {k:"C",t:"先釐清事件脈絡，避免誤會擴大"}]},
-      {q:"你在感情裡最怕的狀態通常是？",
+      {q:"你在感情裡最怕的狀況通常是？",
        o:[{k:"D",t:"對方不負責、問題一直拖"},
           {k:"I",t:"互動冷、沒有回應、像被晾著"},
           {k:"S",t:"衝突頻繁、氣氛緊繃、沒有安穩"},
@@ -247,8 +252,10 @@ const BANK = {
   }
 };
 
+const ORDER = ["life","work","love"];
+
 /** =========================
- * 四型解析素材（偏心理諮詢口吻）
+ * 四型素材（基礎）
  * ========================= */
 const TYPE = {
   D: {
@@ -256,7 +263,7 @@ const TYPE = {
     essence: "你在意的是推進與結果。當事情能被處理、能往前走，你會比較安定；拖著不動反而會讓你更焦躁。",
     needs: ["清楚的目標與期限", "能做主、能推進", "被尊重專業與判斷"],
     stress: ["拖延、卡關、沒人承擔", "討論很久卻不決定", "被動等待、無法掌控節奏"],
-    shadow: "壓力大時，你可能變得更急、更直接；你不是故意壓人，而是你在用『推進』讓自己回到有掌控的狀態。",
+    shadow: "壓力大時，你可能更急、更直接；你不是故意壓人，而是你在用『推進』讓自己回到有掌控的狀態。",
     repair: ["把下一步定小一點：先做到 A", "用里程碑取代催促：何時回報、回報什麼", "先暫定決策，再約定驗證條件與調整點"],
     howToTreat: ["先講結論與期限", "給可選方案與權責邊界", "把事情落到里程碑與回報格式"],
     speak: [
@@ -306,103 +313,243 @@ const TYPE = {
 };
 
 /** =========================
- * 狀態
+ * 12 種主輔型組合解析（每組都不同；不再用一樣的結尾）
+ * ========================= */
+const COMBO = {
+  // D 主型
+  DI: {
+    title: "DI（推進＋連結）",
+    lines: [
+      "你會先把方向與節奏定下來（D），同時也在意人有沒有跟上、互動有沒有對齊（I）。",
+      "你常見的表現是：你不只要結果，你也要『大家願意跟』。所以你會一邊推進、一邊帶動。",
+      "盲點是：當你急起來，語氣會更直；別人可能只聽到壓力，忽略你其實在替大家扛進度。你的關鍵練習是：把催促換成『清楚的邀請＋期限』。"
+    ],
+    tip: "有效做法：先定案一個方向，再用一句話說出『我們一起做』的下一步安排。"
+  },
+  DS: {
+    title: "DS（推進＋安穩）",
+    lines: [
+      "你會推進事情（D），但你也很在意關係承受度與長期穩定（S）。",
+      "你常見的表現是：你不喜歡拖，但你也不想逼人。你會想把人一起帶過去，而不是自己先衝完。",
+      "盲點是：你容易在『想快』和『怕給壓力』之間拉扯。你的關鍵練習是：用分工與里程碑，把壓力放在流程上，而不是放在人身上。"
+    ],
+    tip: "有效做法：把任務拆小＋固定回報節點，速度自然起來，人也比較不被壓到。"
+  },
+  DC: {
+    title: "DC（推進＋標準）",
+    lines: [
+      "你會先推進（D），然後用標準與邏輯把事情收斂到穩（C）。",
+      "你常見的表現是：你不怕做決定，但你也不想留下後遺症，所以你會回頭補定義、補規格、補責任。",
+      "盲點是：壓力大時你可能又快又嚴，自己也很緊。你的關鍵練習是：先暫定結論，並寫下『驗證條件』，讓你能快、也能安心。"
+    ],
+    tip: "有效做法：用「暫定＋檢核表」代替反覆討論，速度與品質會同時提升。"
+  },
+
+  // I 主型
+  ID: {
+    title: "ID（連結＋推進）",
+    lines: [
+      "你會先建立互動與氣氛（I），再把行動帶起來（D）。",
+      "你常見的表現是：你很會讓人想參與，也很敢在關鍵時刻把事情定下來。",
+      "盲點是：當你覺得沒回應，你會更急著推，反而讓人退。你的關鍵練習是：先要到『回應』再要『行動』，順序對了，推進就不費力。"
+    ],
+    tip: "有效做法：先問一句「你現在怎麼看？」拿到回應後，再收斂成下一步與期限。"
+  },
+  IS: {
+    title: "IS（連結＋安穩）",
+    lines: [
+      "你需要連結與被理解（I），同時也很重視安穩與關係的舒適度（S）。",
+      "你常見的表現是：你很會照顧氣氛，也很會讓人安心；你在關係裡是『溫度的穩定器』。",
+      "盲點是：你會把需求講得太柔，最後變成你在撐。你的關鍵練習是：把想要講成可執行的請求（時間、方式、頻率）。"
+    ],
+    tip: "有效做法：把「希望你在乎」翻成「我希望你在（時間）回我一句，讓我安心」。"
+  },
+  IC: {
+    title: "IC（連結＋清楚）",
+    lines: [
+      "你需要互動與被理解（I），也需要語意精準與脈絡完整（C）。",
+      "你常見的表現是：你不只想被安慰，你想被『正確理解』。因此你會補背景、補細節，避免被誤會。",
+      "盲點是：對方跟不上時，你會越講越多、自己越累。你的關鍵練習是：先用一句話說結論與感受，再分段補資訊。"
+    ],
+    tip: "有效做法：先「一句結論」→ 再「兩個重點」→ 最後才「細節與例子」。"
+  },
+
+  // S 主型
+  SD: {
+    title: "SD（安穩＋推進）",
+    lines: [
+      "你重視安穩與合作（S），但必要時你也能出手推進與承擔（D）。",
+      "你常見的表現是：平常你會維持和氣，但當事情拖太久，你會突然變得很果斷，因為你受不了失控。",
+      "盲點是：你常把不舒服放到很後面才說，最後變成一次講很重。你的關鍵練習是：早一點用小表態，把界線說清楚。"
+    ],
+    tip: "有效做法：先用「我需要…」的輕量表達，避免累積到不得不爆。"
+  },
+  SI: {
+    title: "SI（安穩＋連結）",
+    lines: [
+      "你重視安穩（S），也很在意互動是否溫暖、是否有連上（I）。",
+      "你常見的表現是：你願意配合，也願意照顧人；你很擅長把緊張變成柔和。",
+      "盲點是：你太會體諒，容易把自己的需求往後放。你的關鍵練習是：把體諒留著，但別把自己放掉。"
+    ],
+    tip: "有效做法：先肯定對方，再直接提出一個你需要的具體安排（時間/做法）。"
+  },
+  SC: {
+    title: "SC（安穩＋標準）",
+    lines: [
+      "你需要安穩與可預期（S），也需要規則一致與可追蹤（C）。",
+      "你常見的表現是：你願意配合，但你會希望事情有流程、有標準，這樣你才安心、也比較不會反覆。",
+      "盲點是：你可能默默做很多，卻不說標準；結果別人照著自己的方式做，你更累。你的關鍵練習是：把必要標準說在前面。"
+    ],
+    tip: "有效做法：先把「必要標準」列 3 點，其餘允許彈性，你會輕很多。"
+  },
+
+  // C 主型
+  CD: {
+    title: "CD（標準＋推進）",
+    lines: [
+      "你先用標準與邏輯確保正確（C），一旦你有底了，你會推得很快（D）。",
+      "你常見的表現是：你不是慢，你是先把風險算清楚；等你確定方向，你的執行力會突然加速。",
+      "盲點是：外界可能催你快，你就更緊。你的關鍵練習是：先講『我需要的資訊/定義』，讓別人知道你在等什麼。"
+    ],
+    tip: "有效做法：用一句話說清楚「我缺哪個資訊」＋「我拿到後多久能定案」。"
+  },
+  CI: {
+    title: "CI（標準＋連結）",
+    lines: [
+      "你重視一致與正確（C），也在意互動是否被公平理解（I）。",
+      "你常見的表現是：你會想把事情講清楚，也會想確認對方有沒有真的懂你；你在守的是『不要誤會、不要失信』。",
+      "盲點是：你容易在腦中反覆推演，越想越多。你的關鍵練習是：用例子或具體情境，取代抽象解釋。"
+    ],
+    tip: "有效做法：先給一個具體例子（發生什麼）→ 再講你的標準（你要什麼）。"
+  },
+  CS: {
+    title: "CS（標準＋安穩）",
+    lines: [
+      "你重視標準與正確（C），也重視關係承受度與穩定（S）。",
+      "你常見的表現是：你把事情做對、做穩，也把人顧好；你很可靠，但也容易累，因為你常把責任與關係一起扛。",
+      "盲點是：你可能不想麻煩別人，結果全部自己補。你的關鍵練習是：你負責標準與結論，別人負責配合與回報。"
+    ],
+    tip: "有效做法：把「回報格式」與「完成定義」寫清楚，事情會更省你力。"
+  },
+};
+
+/** =========================
+ * 狀態：跨三面向累積
  * ========================= */
 const $ = (id)=>document.getElementById(id);
 
-let mode = null;              // life / work / love
-let idx = -1;                 // -1 未開始；0..n-1 題目中；n 完成
-let answers = [];             // {key, text}
-let score = {D:0,I:0,S:0,C:0};
+let started = false;
+let sectionIndex = 0;
+let qIndex = 0;
+let entries = []; // {sectionKey,qIndex,pickKey,pickText}
+let scoresBySection = {
+  life: {D:0,I:0,S:0,C:0},
+  work: {D:0,I:0,S:0,C:0},
+  love: {D:0,I:0,S:0,C:0},
+};
 
 function resetAll(){
-  mode = null;
-  idx = -1;
-  answers = [];
-  score = {D:0,I:0,S:0,C:0};
+  started = false;
+  sectionIndex = 0;
+  qIndex = 0;
+  entries = [];
+  scoresBySection = {
+    life: {D:0,I:0,S:0,C:0},
+    work: {D:0,I:0,S:0,C:0},
+    love: {D:0,I:0,S:0,C:0},
+  };
 
-  $("title").textContent = "DISC 三面向測驗";
-  $("subtitle").textContent = "先選一個你想探索的面向：生活／工作／感情。每條路徑各 10 題，完成後會給主型＋輔型的詳細說明。";
-  $("progressText").textContent = "尚未開始";
-  $("progressFill").style.width = "0%";
+  $("result").innerHTML = "";
   $("question").style.display = "none";
   $("question").textContent = "";
   $("options").innerHTML = "";
-  $("result").innerHTML = "";
-
+  $("progressText").textContent = "尚未開始";
+  $("progressFill").style.width = "0%";
   $("backBtn").disabled = true;
+  $("startBtn").style.display = "";
 
-  renderModePicker();
+  renderStartPanel();
 }
 
-function renderModePicker(){
-  const box = $("modePicker");
-  box.innerHTML = "";
-  box.style.display = "grid";
-
-  const makeBtn = (key)=>{
-    const b = document.createElement("button");
-    b.innerHTML = `<b style="color:var(--accent)">${BANK[key].name}</b><div class="small">${BANK[key].intro}</div>`;
-    b.onclick = ()=>selectMode(key);
-    return b;
-  };
-
-  box.appendChild(makeBtn("life"));
-  box.appendChild(makeBtn("work"));
-  box.appendChild(makeBtn("love"));
+function renderStartPanel(){
+  $("startPanel").innerHTML = `
+    <div class="box">
+      <h2 style="margin-top:0">作答流程</h2>
+      <ul>
+        <li>依序完成：<b>生活 → 工作 → 感情</b>（各 10 題）</li>
+        <li>每題選「你多數情境下最常出現的反應」</li>
+        <li>最後會給你：每個面向的主型/輔型＋<b>三面向整合比較</b></li>
+      </ul>
+      <p class="small warn">提醒：這是自我理解工具，不是診斷；若你正處於高壓或關係拉扯，結果可當作整理方向的起點。</p>
+    </div>
+  `;
 }
 
-function selectMode(key){
-  mode = key;
-  idx = 0;
-  answers = [];
-  score = {D:0,I:0,S:0,C:0};
-
-  $("modePicker").style.display = "none";
+function start(){
+  started = true;
+  $("startBtn").style.display = "none";
   $("question").style.display = "block";
-  $("title").textContent = `DISC 測驗｜${BANK[mode].name}`;
-  $("subtitle").textContent = BANK[mode].intro;
   render();
 }
 
-function calcScore(){
-  score = {D:0,I:0,S:0,C:0};
-  for(const a of answers) score[a.key] += 1;
+function sectionKey(){ return ORDER[sectionIndex]; }
+function sectionObj(){ return BANK[sectionKey()]; }
+
+function totalQuestionsAll(){
+  return ORDER.reduce((sum,k)=>sum + BANK[k].questions.length, 0);
+}
+function currentNumberAll(){
+  const donePrev = ORDER.slice(0, sectionIndex).reduce((sum,k)=>sum + BANK[k].questions.length, 0);
+  return donePrev + qIndex + 1;
+}
+
+function calcScores(){
+  scoresBySection = {
+    life: {D:0,I:0,S:0,C:0},
+    work: {D:0,I:0,S:0,C:0},
+    love: {D:0,I:0,S:0,C:0},
+  };
+  for(const e of entries){
+    scoresBySection[e.sectionKey][e.pickKey] += 1;
+  }
 }
 
 function back(){
-  if(idx <= 0) return;
-  idx -= 1;
-  answers = answers.slice(0, idx);
+  if(entries.length === 0) return;
+  const last = entries.pop();
+  sectionIndex = ORDER.indexOf(last.sectionKey);
+  qIndex = last.qIndex;
+  calcScores();
+  $("result").innerHTML = "";
   render();
 }
 
 function pick(opt){
-  answers = answers.slice(0, idx);
-  answers.push({key: opt.k, text: opt.t});
-  idx += 1;
+  entries.push({sectionKey: sectionKey(), qIndex, pickKey: opt.k, pickText: opt.t});
+
+  qIndex += 1;
+  if(qIndex >= sectionObj().questions.length){
+    sectionIndex += 1;
+    qIndex = 0;
+  }
+  calcScores();
   render();
 }
 
 function pct(v,total){ return total===0 ? 0 : Math.round(v/total*100); }
-
-function sortedScores(){
-  const arr = Object.entries(score).map(([k,v])=>({k,v}));
+function sortedScores(scoreObj){
+  const arr = Object.entries(scoreObj).map(([k,v])=>({k,v}));
   arr.sort((a,b)=> b.v - a.v);
   return arr;
 }
-
-function classify(){
-  const arr = sortedScores();
+function classify(scoreObj){
+  const arr = sortedScores(scoreObj);
   const max = arr[0].v;
-  const second = arr.find(x=>x.v < max)?.v ?? max; // 全並列時 second=max
-
+  const second = arr.find(x=>x.v < max)?.v ?? max;
   const primary = arr.filter(x=>x.v === max).map(x=>x.k);
   const secondary = arr.filter(x=>x.v === second && !primary.includes(x.k)).map(x=>x.k);
-
-  return { primary, secondary, arr, max, second };
+  return {arr, max, second, primary, secondary};
 }
-
 function escapeHtml(str){
   return String(str).replace(/[&<>"']/g, s => ({
     "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
@@ -410,24 +557,43 @@ function escapeHtml(str){
 }
 
 function render(){
-  const total = BANK[mode].questions.length;
+  $("startPanel").innerHTML = "";
 
-  $("backBtn").disabled = idx <= 0;
-
-  const answered = Math.max(0, Math.min(idx, total));
-  $("progressText").textContent = `第 ${Math.min(idx+1, total)} / 共 ${total} 題`;
-  $("progressFill").style.width = `${Math.round((answered/total)*100)}%`;
-
-  if(idx >= total){
-    calcScore();
-    $("question").textContent = "已完成作答";
+  if(!started){
+    $("question").style.display = "none";
     $("options").innerHTML = "";
-    $("result").innerHTML = buildResultHTML();
     return;
   }
 
-  const q = BANK[mode].questions[idx];
-  $("question").innerHTML = `<span class="pill"><b style="color:var(--accent)">第 ${idx+1} 題</b></span>　${escapeHtml(q.q)}`;
+  const totalAll = totalQuestionsAll();
+  const nowAll = currentNumberAll();
+  const answered = entries.length;
+  $("progressText").textContent = `進度：第 ${Math.min(nowAll, totalAll)} / 共 ${totalAll} 題`;
+  $("progressFill").style.width = `${Math.round((answered/totalAll)*100)}%`;
+  $("backBtn").disabled = entries.length === 0;
+
+  // 全部完成
+  if(sectionIndex >= ORDER.length){
+    $("title").textContent = "DISC 三面向測驗（完成）";
+    $("subtitle").textContent = "以下是整合報告：三個面向各自的主型/輔型、主輔型組合解析、以及三面向比較。";
+    $("question").textContent = "已完成三個面向";
+    $("options").innerHTML = "";
+    $("result").innerHTML = buildIntegratedReport();
+    return;
+  }
+
+  // 當前面向
+  const sec = sectionObj();
+  $("title").textContent = `DISC 測驗｜${sec.name}`;
+  $("subtitle").textContent = sec.intro;
+
+  const q = sec.questions[qIndex];
+  $("question").innerHTML = `
+    <span class="pill"><b style="color:var(--accent)">${sec.name}</b></span>
+    <span class="pill"><b style="color:var(--accent)">第 ${qIndex+1} / ${sec.questions.length} 題</b></span>
+    <span class="pill"><b style="color:var(--accent)">總進度 ${nowAll} / ${totalAll}</b></span>
+    <div style="margin-top:10px">${escapeHtml(q.q)}</div>
+  `;
 
   const box = $("options");
   box.innerHTML = "";
@@ -437,24 +603,36 @@ function render(){
     b.onclick = ()=>pick(opt);
     box.appendChild(b);
   });
+
+  $("result").innerHTML = "";
 }
 
-function buildResultHTML(){
-  const total = BANK[mode].questions.length;
-  const {primary, secondary, arr, max, second} = classify();
-
+/** =========================
+ * 報告產生
+ * ========================= */
+function labelPrimarySecondary(primary, secondary){
   const pText = primary.length===1 ? TYPE[primary[0]].name : `並列主型：${primary.map(k=>TYPE[k].name).join("、")}`;
   const sText = secondary.length===1 ? TYPE[secondary[0]].name : (secondary.length>1 ? `並列輔型：${secondary.map(k=>TYPE[k].name).join("、")}` : "輔型不明顯（分數接近）");
+  return {pText, sText};
+}
 
-  const reliability = `題數為 ${total} 題，屬於輪廓理解。若你想更精準分辨主輔型強弱，可在同一路徑擴充題目（例如 16／24 題）。`;
+function buildAnalysisBlock(title, scoreObj, sectionName){
+  const total = Object.values(scoreObj).reduce((a,b)=>a+b,0);
+  const {arr, primary, secondary, max, second} = classify(scoreObj);
+  const {pText, sText} = labelPrimarySecondary(primary, secondary);
+
+  const reliability = `此面向題數為 ${total} 題，屬輪廓理解；若要更精準，可擴充題目（例如 16／24 題）。`;
+
+  const analysis = (primary.length===1)
+    ? buildSinglePrimaryAnalysis(primary[0], secondary.length===1 ? secondary[0] : null, max, second, sectionName)
+    : buildMultiPrimaryAnalysis(primary, sectionName);
 
   return `
-    <div class="box">
-      <h2 style="margin-top:0">結果總覽</h2>
-      <div class="tag">路徑：<b style="color:var(--text)">${BANK[mode].name}</b></div>
+    <div class="box" style="margin-top:12px">
+      <h2 style="margin-top:0">${title}</h2>
+      <div class="tag">面向：<b style="color:var(--text)">${sectionName}</b></div>
       <div class="tag">主型：<b style="color:var(--text)">${pText}</b></div>
       <div class="tag">輔型：<b style="color:var(--text)">${sText}</b></div>
-      <div class="tag">題數：${total}</div>
       <p class="small warn">${reliability}</p>
 
       <h2>分數分布</h2>
@@ -470,92 +648,114 @@ function buildResultHTML(){
           `).join("")}
         </tbody>
       </table>
-    </div>
 
-    ${buildAnalysis(primary, secondary, max, second)}
+      ${analysis}
 
-    <div class="grid" style="margin-top:12px">
-      <div class="box">
-        <h2 style="margin-top:0">你在這個面向裡，最需要被怎麼對待</h2>
-        ${buildHowToTreat(primary, secondary)}
+      <div class="grid" style="margin-top:12px">
+        <div class="box">
+          <h2 style="margin-top:0">你在這個面向裡，最需要被怎麼對待</h2>
+          ${buildHowToTreat(primary, secondary)}
+        </div>
+        <div class="box">
+          <h2 style="margin-top:0">你可以怎麼說，既保護自己也不把關係推遠</h2>
+          ${buildSpeak(primary, secondary)}
+        </div>
       </div>
-      <div class="box">
-        <h2 style="margin-top:0">你可以怎麼說，既保護自己也不把關係推遠</h2>
-        ${buildSpeak(primary, secondary)}
+
+      <div class="box" style="margin-top:12px">
+        <h2 style="margin-top:0">主型＋輔型的互動解析</h2>
+        ${buildSecondaryAnalysis(primary, secondary)}
       </div>
-    </div>
 
-    <div class="box" style="margin-top:12px">
-      <h2 style="margin-top:0">主型＋輔型的互動解析</h2>
-      ${buildSecondaryAnalysis(primary, secondary)}
-    </div>
-
-    <div class="box" style="margin-top:12px">
-      <h2 style="margin-top:0">在壓力上來的時候，你可以怎麼把自己拉回來</h2>
-      ${buildRepair(primary, secondary)}
-    </div>
-
-    <div class="footer" style="margin-top:12px">
-      <button class="secondary" onclick="resetAll()">再做一次（可換面向）</button>
+      <div class="box" style="margin-top:12px">
+        <h2 style="margin-top:0">在壓力上來的時候，你可以怎麼把自己拉回來</h2>
+        ${buildRepair(primary, secondary)}
+      </div>
     </div>
   `;
 }
 
-/** 解析：把原本「諮商式解讀」改成「解析」，內容改成「觸發→保護→守護→回穩」避免跟『怎麼對待』重複 */
-function buildAnalysis(primary, secondary, max, second){
-  if(primary.length === 1){
-    const p = primary[0];
-    const s = (secondary.length === 1) ? secondary[0] : null;
+function buildSinglePrimaryAnalysis(p, s, max, second, sectionName){
+  const gap = max - second;
+  const gapLine = gap >= 3
+    ? "你的主型很突出，代表你在這個面向裡的習慣反應相對一致。"
+    : "你的主型與其他向度差距不大，代表你有彈性，但也可能更容易感到拉扯。";
 
-    const secondaryLine = s
-      ? `同時你也帶著「${TYPE[s].name}」的輔型特質：它通常會在你想調節關係、或想讓自己更安心的時候出現。`
-      : `你的分數分布相對接近，代表你會依情境切換策略；這也常見於需要同時顧結果、顧關係、顧標準的角色。`;
-
-    const gap = max - second;
-    const gapLine = gap >= 3
-      ? "你的主型很突出，代表你在這個面向裡的習慣反應相對一致。"
-      : "你的主型與其他向度差距不大，代表你有彈性，但也可能更容易感到拉扯。";
-
-    const pStress = TYPE[p].stress[0] || "某些不確定與壓力情境";
-    const pNeed = TYPE[p].needs[0] || "一些你很在意的需要";
-
-    return `
-      <div class="box" style="margin-top:12px">
-        <h2 style="margin-top:0">解析</h2>
-        <p><b>${TYPE[p].name}</b>：${TYPE[p].essence}</p>
-        <p>${secondaryLine}</p>
-        <p class="small">${gapLine}</p>
-
-        <div class="grid" style="margin-top:10px">
-          <div class="box">
-            <h2 style="margin-top:0">你在這個面向裡的核心模式</h2>
-            <ul>
-              <li><b>常見觸發點：</b>${pStress}</li>
-              <li><b>你會怎麼保護自己：</b>${TYPE[p].shadow}</li>
-              <li><b>你其實在守護的是：</b>${pNeed}</li>
-            </ul>
-            <p class="small">這不是貼標籤，而是把你的「自動反應」看清楚；看清楚後，你才有空間選更舒服的做法。</p>
-          </div>
-          <div class="box">
-            <h2 style="margin-top:0">你比較容易回到穩定的方式</h2>
-            <ul>${TYPE[p].repair.map(x=>`<li>${x}</li>`).join("")}</ul>
-          </div>
-        </div>
-      </div>
+  let comboHTML = "";
+  if(s){
+    const key = `${p}${s}`;
+    const pack = COMBO[key];
+    if(pack){
+      comboHTML = `
+        <p class="small">你的主輔型組合：<b style="color:var(--text)">${pack.title}</b></p>
+        <ul>${pack.lines.map(x=>`<li>${x}</li>`).join("")}</ul>
+        <p class="small muted"><b>建議用法：</b>${pack.tip}</p>
+      `;
+    }else{
+      comboHTML = `
+        <p class="small">你的主輔型組合：<b style="color:var(--text)">${p}${s}</b></p>
+        <ul>
+          <li>你在此面向以 ${TYPE[p].name} 為主軸，同時帶著 ${TYPE[s].name} 的調節策略。</li>
+          <li>你的反應會依情境在兩種策略間切換：一種是主軸，一種是保護與調節。</li>
+          <li>你最需要的是：把界線、下一步、責任說清楚，讓你不用用情緒撐進度。</li>
+        </ul>
+      `;
+    }
+  } else {
+    comboHTML = `
+      <p class="small">你的輔型不明顯（分數接近），表示你在此面向會依情境切換策略。</p>
+      <ul>
+        <li>你不是沒有主軸，而是你更擅長「看情境選方法」。</li>
+        <li>當你覺得累，多半不是性格問題，而是你的責任與界線沒有被說清楚。</li>
+        <li>先把「你能做什麼 / 不能做什麼」講清楚，你會輕很多。</li>
+      </ul>
     `;
   }
 
-  const names = primary.map(k=>TYPE[k].name).join("、");
+  const pStress = TYPE[p].stress[0] || "某些不確定與壓力情境";
+  const pNeed = TYPE[p].needs[0] || "一些你很在意的需要";
+
   return `
     <div class="box" style="margin-top:12px">
-      <h2 style="margin-top:0">解析（並列主型）</h2>
-      <p>你在這個面向裡呈現「並列主型（${names}）」。這通常意味著：你在不同情境下會啟用不同的自我保護與應對策略，而不是沒有主軸。</p>
-      <p class="small">若你想分辨哪一個更像「核心」，建議同一路徑加題數，或把題目改得更貼近你常遇到的真實情境。</p>
+      <h2 style="margin-top:0">解析（${sectionName}）</h2>
+      <p><b>${TYPE[p].name}</b>：${TYPE[p].essence}</p>
+      <p class="small">${gapLine}</p>
+
+      <div class="box" style="margin-top:10px">
+        <h2 style="margin-top:0">主輔型搭配說明</h2>
+        ${comboHTML}
+      </div>
+
+      <div class="grid" style="margin-top:10px">
+        <div class="box">
+          <h2 style="margin-top:0">你在這個面向裡的核心模式</h2>
+          <ul>
+            <li><b>常見觸發點：</b>${pStress}</li>
+            <li><b>你會怎麼保護自己：</b>${TYPE[p].shadow}</li>
+            <li><b>你其實在守護的是：</b>${pNeed}</li>
+          </ul>
+          <p class="small">這不是貼標籤，而是把你的「自動反應」看清楚；看清楚後，你才有空間選更舒服的做法。</p>
+        </div>
+        <div class="box">
+          <h2 style="margin-top:0">你比較容易回到穩定的方式</h2>
+          <ul>${TYPE[p].repair.map(x=>`<li>${x}</li>`).join("")}</ul>
+        </div>
+      </div>
     </div>
   `;
 }
 
-/** 『最需要被怎麼對待』：改成更明確可操作的對外指南，不再列 needs 清單 */
+function buildMultiPrimaryAnalysis(primary, sectionName){
+  const names = primary.map(k=>TYPE[k].name).join("、");
+  return `
+    <div class="box" style="margin-top:12px">
+      <h2 style="margin-top:0">解析（並列主型｜${sectionName}）</h2>
+      <p>你在此面向呈現「並列主型（${names}）」。這通常意味著：你會依情境啟用不同策略，而不是沒有主軸。</p>
+      <p class="small">若你想分辨哪一個更像核心，可在此面向加題數，或把題目改得更貼近你常遇到的真實情境。</p>
+    </div>
+  `;
+}
+
 function buildHowToTreat(primary, secondary){
   if(primary.length === 1){
     const p = primary[0];
@@ -563,104 +763,56 @@ function buildHowToTreat(primary, secondary){
     const extra = s ? `<p class="small">輔型加分（${TYPE[s].name}）：${TYPE[s].howToTreat[0]}。</p>` : "";
     return `<ul>${TYPE[p].howToTreat.map(x=>`<li>${x}</li>`).join("")}</ul>${extra}`;
   }
-
   return `
     <ul>
-      <li>先確認此刻最重要的是：推進、連結、安穩、還是標準。</li>
+      <li>先確認此刻對方最在意的是：速度、互動、安穩，或標準。</li>
       <li>把回覆變具體：時間點、下一步、責任與範圍。</li>
-      <li>用「結論＋安排」取代「猜測對方的意思」。</li>
+      <li>少猜、多對齊：用一句話確認彼此理解。</li>
     </ul>
   `;
 }
 
-/** 你可以怎麼說：保留諮詢口吻句型（但標題不變） */
 function buildSpeak(primary, secondary){
   if(primary.length === 1){
     const p = primary[0];
     const s = (secondary.length === 1) ? secondary[0] : null;
-    const extra = s ? `<p class="small">輔型提醒：當你開始用 ${TYPE[s].name} 的方式調節，你會更容易在關係裡穩住自己。</p>` : "";
+    const extra = s ? `<p class="small">輔型提醒：你使用 ${TYPE[s].name} 的方式調節時，關係會更容易穩下來。</p>` : "";
     return `<ul>${TYPE[p].speak.map(x=>`<li>${x}</li>`).join("")}</ul>${extra}`;
   }
-
   return `
     <ul>
-      <li>先說狀態（不責怪）：『我現在有點…』</li>
-      <li>再說事實（可驗證）：『因為發生了…』</li>
-      <li>最後說請求（可做到）：『我需要你…／我們可不可以…』</li>
+      <li>先說狀態：我現在有點…</li>
+      <li>再說事實：因為發生了…</li>
+      <li>最後說請求：我需要你…／我們可不可以…</li>
     </ul>
   `;
 }
 
+// 這一段也改成用 COMBO（每組不同），不再給一樣的通用結尾
 function buildSecondaryAnalysis(primary, secondary){
   if(primary.length === 1 && secondary.length === 1){
-    const p = primary[0], s = secondary[0];
-    const map = {
-      "CS": [
-        "你常同時在做兩件事：想把事情做對、做穩；也想顧及他人的承受度。",
-        "這很可靠，但也容易累，因為你常把『責任』與『關係』一起扛。",
-        "對你有效的分層是：你負責標準與結論；對方負責跟上與回報。"
-      ],
-      "CD": [
-        "你會先釐清與驗證，等到心裡有底，就會加速推進。",
-        "旁人有時會覺得你『忽然變快』，其實是你從不確定走到確定的瞬間。",
-        "建議：提前預告定案點，讓別人跟得上你的節奏。"
-      ],
-      "DS": [
-        "你推進力強，同時也看得到別人的承受度，會想把人一起帶上來。",
-        "壓力大時，你可能同時想推進、又怕造成壓力，內在拉扯會變大。",
-        "建議：用里程碑取代催促，用清楚分工取代自己扛。"
-      ],
-      "DC": [
-        "你習慣先推進，再用標準把事情收斂到更穩的樣子。",
-        "你越把標準說清楚，別人越能跟上你，不會只感受到『快』。",
-        "建議：用『暫定結論＋驗證條件』兼顧速度與正確。"
-      ],
-      "IS": [
-        "你在意連結，也在意安穩；你很擅長照顧關係。",
-        "但你可能因此比較不想把衝突說破，容易自己消化。",
-        "建議：用溫和的界線語句，把需求說清楚。"
-      ],
-      "IC": [
-        "你既想被理解，也想把事情講清楚。",
-        "壓力大時你可能講得更長，其實是你很在意不要被誤解。",
-        "建議：先說結論與感受，再補依據與細節。"
-      ],
-      "SC": [
-        "你追求安穩，也重視一致性。",
-        "你願意配合，但你也需要清楚的規則來安心。",
-        "建議：把必要標準說清楚，其餘地方允許彈性。"
-      ],
-      "SD": [
-        "你通常不想逼人，但必要時你也會扛起推進。",
-        "壓力大時你可能硬撐推進，內在卻很疲憊。",
-        "建議：把需求說清楚，不要只用忍耐換平衡。"
-      ],
-      "ID": [
-        "你能帶動人，也敢推進；你很有影響力。",
-        "壓力大時，你可能更急著要結果與回應。",
-        "建議：把熱度落到『下一步與期限』，你會更踏實。"
-      ],
-      "CI": [
-        "你在意正確，也在意互動是否被理解。",
-        "你容易在被誤解時想講更完整，其實是想被公平看待。",
-        "建議：先用例子讓人懂，再補標準。"
-      ]
-    };
-
-    const lines = map[`${p}${s}`] || [
-      "你的主型與輔型會在不同情境輪流上場。",
-      "當你開始覺得拉扯，先問：此刻我最需要的是推進、連結、安穩，還是標準？",
-      "把需要說成具體請求，通常能大幅降低內耗。"
-    ];
-
-    return `<ul>${lines.map(x=>`<li>${x}</li>`).join("")}</ul>`;
+    const key = `${primary[0]}${secondary[0]}`;
+    const pack = COMBO[key];
+    if(pack){
+      return `
+        <p class="small"><b>${pack.title}</b></p>
+        <ul>${pack.lines.map(x=>`<li>${x}</li>`).join("")}</ul>
+        <p class="small muted"><b>建議用法：</b>${pack.tip}</p>
+      `;
+    }
+    return `
+      <ul>
+        <li>你在此面向以 ${TYPE[primary[0]].name} 為主軸，同時帶著 ${TYPE[secondary[0]].name} 的調節策略。</li>
+        <li>若你覺得容易累，通常是「界線與分工不清」或「期待沒有對齊」。</li>
+        <li>把下一步講清楚，你會更穩。</li>
+      </ul>
+    `;
   }
-
   return `
     <ul>
       <li>主型是你在此面向的第一反應；輔型是你用來調節與保護的第二套策略。</li>
-      <li>若出現並列主型/輔型，通常表示你情境切換明顯；想更清楚可增加題數。</li>
-      <li>實務上，把需求具體化（時間點、範圍、下一步）通常比追求完美分類更有用。</li>
+      <li>若出現並列主型/輔型，表示你情境切換明顯；想更清楚可增加題數。</li>
+      <li>實務上，把需求具體化（時間點、範圍、下一步）比追求完美分類更有用。</li>
     </ul>
   `;
 }
@@ -669,20 +821,117 @@ function buildRepair(primary, secondary){
   if(primary.length === 1){
     const p = primary[0];
     const s = (secondary.length===1) ? secondary[0] : null;
-    const extra = s ? `<p class="small">輔型提醒：當你開始用 ${TYPE[s].name} 的方式（例如：${TYPE[s].repair[0]}），你會更快回到穩定。</p>` : "";
+    const extra = s ? `<p class="small">輔型提醒：你也可以用 ${TYPE[s].name} 的方式（例如：${TYPE[s].repair[0]}）幫自己回穩。</p>` : "";
     return `<ul>${TYPE[p].repair.map(x=>`<li>${x}</li>`).join("")}</ul>${extra}`;
   }
-
   return `
     <ul>
       <li>先把需求變具體：時間點、範圍、下一步。</li>
-      <li>如果你在反覆想、反覆修正：先暫定一個結論，讓心有地方落下來。</li>
-      <li>如果你在吞、在忍：先用很小的表態開始：『我需要…』不必一次說完。</li>
+      <li>如果你在反覆想：先暫定一個結論，約定驗證點。</li>
+      <li>如果你在吞：先用小表態說出一個需求，不用一次說完。</li>
     </ul>
   `;
 }
 
+/** =========================
+ * 整合報告
+ * ========================= */
+function buildIntegratedReport(){
+  return `
+    <div class="box">
+      <h2 style="margin-top:0">整合報告</h2>
+      <p>以下依序呈現：生活／工作／感情三個面向的主型＋輔型與解析，最後提供跨面向比較。</p>
+      <div class="footer" style="margin-top:10px">
+        <button class="secondary" onclick="resetAll()">重新開始</button>
+      </div>
+    </div>
+    ${buildAnalysisBlock("生活面向報告", scoresBySection.life, "生活面向")}
+    ${buildAnalysisBlock("工作面向報告", scoresBySection.work, "工作面向")}
+    ${buildAnalysisBlock("感情面向報告", scoresBySection.love, "感情面向")}
+    ${buildComparisonBlock()}
+  `;
+}
+
+function buildComparisonBlock(){
+  const sec = {
+    life: scoresBySection.life,
+    work: scoresBySection.work,
+    love: scoresBySection.love
+  };
+  const dims = ["D","I","S","C"];
+  const dimName = {D:"主導", I:"影響", S:"穩定", C:"謹慎"};
+  const secName = {life:"生活", work:"工作", love:"感情"};
+
+  const highlights = dims.map(d=>{
+    const arr = Object.entries(sec).map(([k,v])=>({section:k, val:v[d]}));
+    arr.sort((a,b)=>b.val-a.val);
+    return {d, top:arr[0], second:arr[1], gap:arr[0].val - arr[1].val};
+  });
+
+  const bySectionHighlight = Object.entries(sec).map(([k,v])=>{
+    const arr = sortedScores(v);
+    return {section:k, top:arr[0], second:arr[1], gap:arr[0].v - arr[1].v};
+  });
+
+  // 用差距最大的 2 個向度做整合敘事（不寫制式通用句）
+  const strongest = [...highlights].sort((a,b)=>b.gap-a.gap).slice(0,2);
+  const explain = {
+    D:"你在該面向更常用「推進與掌控」來穩住局面。",
+    I:"你在該面向更常用「互動與回應」來確認安全感。",
+    S:"你在該面向更常用「維持安穩與節奏」來避免失衡。",
+    C:"你在該面向更常用「標準與一致」來降低不確定。"
+  };
+
+  const narrative = strongest.map(s=>{
+    const dim = `${s.d}（${dimName[s.d]}）`;
+    return `<li><b>${dim}</b>最高的面向是<b>${secName[s.top.section]}</b>（差距 ${s.gap}）。${explain[s.d]}</li>`;
+  }).join("");
+
+  return `
+    <div class="box" style="margin-top:12px">
+      <h2 style="margin-top:0">跨面向比較</h2>
+
+      <h2>以向度看（D / I / S / C）</h2>
+      <table class="table">
+        <thead><tr><th>向度</th><th>最高面向</th><th>分數</th><th>次高面向</th><th>差距</th></tr></thead>
+        <tbody>
+          ${highlights.map(h=>`
+            <tr>
+              <td>${h.d}（${dimName[h.d]}）</td>
+              <td>${secName[h.top.section]}</td>
+              <td>${h.top.val}</td>
+              <td>${secName[h.second.section]}</td>
+              <td>${h.gap}</td>
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>
+
+      <h2>以面向看（生活 / 工作 / 感情）</h2>
+      <table class="table">
+        <thead><tr><th>面向</th><th>最突出向度</th><th>分數</th><th>次高</th><th>差距</th></tr></thead>
+        <tbody>
+          ${bySectionHighlight.map(s=>`
+            <tr>
+              <td>${secName[s.section]}</td>
+              <td>${TYPE[s.top.k].name}</td>
+              <td>${s.top.v}</td>
+              <td>${TYPE[s.second.k].name}</td>
+              <td>${s.gap}</td>
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>
+
+      <h2>整合解讀（看差距最大的地方）</h2>
+      <ul>${narrative}</ul>
+      <p class="small">差距越大，代表你在該面向越固定使用那種策略；差距小則表示你會依情境切換。</p>
+    </div>
+  `;
+}
+
 /** 綁定 */
+$("startBtn").addEventListener("click", start);
 $("backBtn").addEventListener("click", back);
 $("resetBtn").addEventListener("click", resetAll);
 
