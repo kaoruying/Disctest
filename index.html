@@ -1,0 +1,536 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>DISC 測驗系統（單題作答）</title>
+  <style>
+    :root{
+      --bg:#0b1220; --card:#121b2e; --text:#e9eefc; --muted:#b7c0da;
+      --line:#24304c; --btn:#1e2a46; --btn2:#223055; --accent:#7aa2ff;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:system-ui,-apple-system,"Segoe UI","Noto Sans TC","Microsoft JhengHei",sans-serif;background:var(--bg);color:var(--text)}
+    .wrap{max-width:980px;margin:0 auto;padding:24px}
+    .row{display:flex;gap:16px;flex-wrap:wrap}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;flex:1;min-width:280px}
+    h1{margin:0 0 10px;font-size:22px}
+    h2{margin:0 0 10px;font-size:18px}
+    p{margin:8px 0;color:var(--muted);line-height:1.55}
+    .pill{display:inline-flex;gap:8px;align-items:center;padding:6px 10px;border:1px solid var(--line);border-radius:999px;color:var(--muted)}
+    .qno{color:var(--accent);font-weight:700}
+    .qtext{font-size:18px;color:var(--text);margin-top:8px}
+    .opts{margin-top:14px;display:grid;gap:10px}
+    button.opt{
+      width:100%;text-align:left;padding:12px 12px;border-radius:12px;
+      border:1px solid var(--line);background:var(--btn);color:var(--text);
+      cursor:pointer;transition:.12s transform,.12s background,.12s border
+    }
+    button.opt:hover{transform:translateY(-1px);background:var(--btn2);border-color:#33446b}
+    .footer{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+    button.secondary{
+      padding:10px 12px;border-radius:12px;border:1px solid var(--line);
+      background:transparent;color:var(--muted);cursor:pointer
+    }
+    button.primary{
+      padding:10px 12px;border-radius:12px;border:1px solid #3855a7;
+      background:#1a2a57;color:var(--text);cursor:pointer
+    }
+    .bar{height:10px;background:#0e1630;border:1px solid var(--line);border-radius:999px;overflow:hidden}
+    .fill{height:100%;background:linear-gradient(90deg,#7aa2ff,#a77bff);width:0%}
+    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    @media (max-width:720px){.grid2{grid-template-columns:1fr}}
+    .table{width:100%;border-collapse:collapse;margin-top:10px}
+    .table th,.table td{border-bottom:1px solid var(--line);padding:10px 6px;text-align:left}
+    .tag{display:inline-block;padding:4px 8px;border:1px solid var(--line);border-radius:999px;color:var(--muted);margin-right:6px;margin-top:6px}
+    .small{font-size:12px;color:var(--muted)}
+    textarea{width:100%;min-height:120px;background:#0e1630;border:1px solid var(--line);border-radius:12px;color:var(--text);padding:10px;font-family:ui-monospace,Consolas,monospace}
+    .warn{color:#ffd37a}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>DISC 測驗系統（一次問一題）</h1>
+    <p>作答原則：選「你多數情境下最常出現的反應」，不是你覺得最好的那個。</p>
+
+    <div class="row">
+      <div class="card" style="flex:2">
+        <div class="pill">
+          <span>進度</span>
+          <span class="qno" id="progressText">0 / 0</span>
+        </div>
+        <div style="margin-top:10px" class="bar"><div class="fill" id="progressFill"></div></div>
+
+        <div class="qtext" id="qText" style="margin-top:14px">按「開始」開始測驗</div>
+
+        <div class="opts" id="opts"></div>
+
+        <div class="footer">
+          <button class="primary" id="startBtn">開始</button>
+          <button class="secondary" id="backBtn" disabled>上一題</button>
+          <button class="secondary" id="resetBtn">重設</button>
+        </div>
+
+        <div class="small" style="margin-top:10px">
+          小提醒：你可以改題庫；系統會自動依題庫題數計算結果。
+        </div>
+      </div>
+
+      <div class="card" style="flex:1">
+        <h2>即時計分</h2>
+        <p class="small">這裡是目前累積分數（尚未完成也會顯示）。</p>
+        <div id="scoreBox"></div>
+        <div style="margin-top:12px" class="small warn" id="noteBox"></div>
+      </div>
+    </div>
+
+    <div class="row" style="margin-top:16px">
+      <div class="card" style="flex:2">
+        <h2>結果分析</h2>
+        <div id="resultBox">
+          <p class="small">完成後會顯示：分數、主副型、行為特徵、壓力來源、溝通建議。</p>
+        </div>
+      </div>
+
+      <div class="card" style="flex:1">
+        <h2>題庫（可自行編輯）</h2>
+        <p class="small">格式：每題有 4 個選項，各自對應 D/I/S/C。改完後按「套用題庫」。</p>
+        <textarea id="bankEditor"></textarea>
+        <div class="footer">
+          <button class="secondary" id="applyBankBtn">套用題庫</button>
+          <button class="secondary" id="exportBtn">匯出作答紀錄</button>
+        </div>
+        <div class="small" id="bankStatus"></div>
+      </div>
+    </div>
+  </div>
+
+<script>
+/** =========================
+ *  題庫：你只要改這裡就好
+ *  每個選項的 key：D / I / S / C
+ * ========================= */
+let QUESTION_BANK = [
+  {
+    id: 1,
+    text: "遇到一件資訊不完整但需要推進的事情時，你比較常見的反應是？",
+    options: [
+      { key: "D", label: "先做再說，邊做邊修正，重點是把事情推動起來" },
+      { key: "I", label: "先找人討論，讓大家對方向有共識再動" },
+      { key: "S", label: "先觀察狀況，確定不會影響彼此合作再做" },
+      { key: "C", label: "先補足資訊與依據，確認做法與風險後再行動" }
+    ]
+  },
+  {
+    id: 2,
+    text: "面對不同意見甚至有點衝突時，你通常怎麼處理？",
+    options: [
+      { key: "D", label: "直接說立場，聚焦事情要有效率、有結果" },
+      { key: "I", label: "用比較圓融的說法，讓對方比較能接受" },
+      { key: "S", label: "先退一步，觀察對方情緒與現場氣氛" },
+      { key: "C", label: "把邏輯與依據講清楚，讓對方理解原因" }
+    ]
+  },
+  {
+    id: 3,
+    text: "環境節奏混亂、標準不清楚時，你最容易進入哪種狀態？",
+    options: [
+      { key: "D", label: "我會把方向定下來，讓大家有結論能前進" },
+      { key: "I", label: "我會用溝通把大家拉回同一個頻率" },
+      { key: "S", label: "我會先配合現況，把自己的角色顧好" },
+      { key: "C", label: "我會想先釐清流程、規則、定義，才安心" }
+    ]
+  },
+  {
+    id: 4,
+    text: "壓力變大時，最主要讓你不舒服的是？",
+    options: [
+      { key: "D", label: "事情卡住、效率低、進度被拖慢" },
+      { key: "I", label: "互動不順、誤會變多、氣氛不好" },
+      { key: "S", label: "被要求太多、顧太多人、卻沒被體諒" },
+      { key: "C", label: "標準一直變、規則不清楚、沒有正確做法" }
+    ]
+  },
+  {
+    id: 5,
+    text: "合作一件事時，你內在最在意的是？",
+    options: [
+      { key: "D", label: "誰負責、誰決定，避免效率被拖垮" },
+      { key: "I", label: "互動順不順，大家有沒有共識與動力" },
+      { key: "S", label: "相處是否舒服，彼此有沒有顧到感受" },
+      { key: "C", label: "分工是否清楚、角色責任是否定義好" }
+    ]
+  },
+  {
+    id: 6,
+    text: "收到他人批評或建議時，你最自然的反應是？",
+    options: [
+      { key: "D", label: "先判斷有沒有用，沒用就不太放在心上" },
+      { key: "I", label: "會在意對方怎麼說、氣氛怎麼樣" },
+      { key: "S", label: "會先反省是不是自己哪裡沒顧到對方" },
+      { key: "C", label: "會分析內容哪裡合理、哪裡不合理" }
+    ]
+  },
+  {
+    id: 7,
+    text: "你發現自己的做法可能讓別人有壓力時，你較常怎麼做？",
+    options: [
+      { key: "D", label: "如果方向是對的，短期不舒服可以承受" },
+      { key: "I", label: "多說明、多鼓舞，讓對方比較能接受" },
+      { key: "S", label: "調整自己，避免對方承受太多" },
+      { key: "C", label: "檢視流程或設計，看看是不是方式有問題" }
+    ]
+  },
+  {
+    id: 8,
+    text: "沒人要求也不影響考核，但你覺得可以更好時，你通常會？",
+    options: [
+      { key: "D", label: "視重要性與時間，必要才做" },
+      { key: "I", label: "如果能讓團隊更順，我願意多補一點" },
+      { key: "S", label: "默默補好，不想造成他人困擾" },
+      { key: "C", label: "修到符合自己心中的標準才安心" }
+    ]
+  }
+];
+
+/** ======= 狀態 ======= */
+let idx = -1; // 目前題目索引
+let answers = []; // {qid, pickIndex, key, label}
+let scores = { D:0, I:0, S:0, C:0 };
+
+/** ======= 工具函式 ======= */
+const $ = (id) => document.getElementById(id);
+
+function resetAll(){
+  idx = -1;
+  answers = [];
+  scores = { D:0, I:0, S:0, C:0 };
+  render();
+  $("resultBox").innerHTML = `<p class="small">完成後會顯示：分數、主副型、行為特徵、壓力來源、溝通建議。</p>`;
+}
+
+function calcScores(){
+  scores = { D:0, I:0, S:0, C:0 };
+  for(const a of answers){
+    scores[a.key] += 1;
+  }
+}
+
+function pct(n, total){
+  return total === 0 ? 0 : Math.round((n/total)*100);
+}
+
+function sortedTypes(){
+  const arr = Object.entries(scores).map(([k,v])=>({k,v}));
+  arr.sort((a,b)=> b.v - a.v);
+  return arr;
+}
+
+/** ======= 解讀模板（可自行改文案） ======= */
+const TYPE_TEXT = {
+  D: {
+    name: "D（主導）",
+    traits: ["行動快、結果導向", "敢定方向、敢承擔", "偏好直接與效率"],
+    stress: ["被拖延、無法控制進度", "權責不清、決策卡住"],
+    comm: ["先講結論與目標", "提供選項與期限", "避免冗長鋪陳"]
+  },
+  I: {
+    name: "I（影響）",
+    traits: ["重互動與氛圍", "擅長帶動、說服", "喜歡被看見與被回應"],
+    stress: ["被忽略、互動冷", "氣氛僵、缺少認同"],
+    comm: ["先肯定、再談重點", "多用故事與畫面", "給舞台與回饋"]
+  },
+  S: {
+    name: "S（穩定）",
+    traits: ["重合作與穩定", "願意支持、耐心陪跑", "偏好一致與可預期"],
+    stress: ["變動太快、臨時改", "衝突多、被逼表態"],
+    comm: ["先說明原因與影響", "給緩衝與步驟", "避免強硬逼迫"]
+  },
+  C: {
+    name: "C（謹慎）",
+    traits: ["重標準與正確", "邏輯清楚、會驗證", "喜歡流程、數據、依據"],
+    stress: ["規則不清、標準一直變", "資訊不足就要決策", "粗糙與不一致"],
+    comm: ["先給依據與定義", "把範圍、標準、例外講清楚", "允許思考時間"]
+  }
+};
+
+function buildAnalysis(){
+  const total = QUESTION_BANK.length;
+  const s = sortedTypes();
+  const primary = s[0];
+  const secondary = s[1];
+  const pKey = primary.k, sKey = secondary.k;
+
+  // 差距判斷
+  const gap = primary.v - secondary.v;
+  let stabilityNote = "";
+  if(gap >= 3) stabilityNote = "主型很突出，行為風格偏一致、辨識度高。";
+  else if(gap === 2) stabilityNote = "主副型都有份量，會依情境切換表現。";
+  else stabilityNote = "主副型接近，可能受角色、環境期待影響較大。";
+
+  // 混合型描述
+  const mixLine = `你的主型偏向「${TYPE_TEXT[pKey].name}」，副型帶有「${TYPE_TEXT[sKey].name}」的特徵。`;
+
+  const html = `
+    <div class="grid2">
+      <div>
+        <div class="pill">主型：<b style="color:var(--text);margin-left:6px">${TYPE_TEXT[pKey].name}</b></div>
+        <div style="height:10px"></div>
+        <div class="pill">副型：<b style="color:var(--text);margin-left:6px">${TYPE_TEXT[sKey].name}</b></div>
+        <p style="margin-top:10px">${mixLine}</p>
+        <p class="small">${stabilityNote}</p>
+
+        <div style="margin-top:10px">
+          <span class="tag">總題數：${total}</span>
+          <span class="tag">主型分數：${primary.v}</span>
+          <span class="tag">副型分數：${secondary.v}</span>
+          <span class="tag">差距：${gap}</span>
+        </div>
+      </div>
+      <div>
+        <h2 style="margin-top:0">分數分布</h2>
+        <table class="table">
+          <thead><tr><th>向度</th><th>分數</th><th>比例</th></tr></thead>
+          <tbody>
+            ${["D","I","S","C"].map(k=>`
+              <tr>
+                <td>${TYPE_TEXT[k].name}</td>
+                <td>${scores[k]}</td>
+                <td>${pct(scores[k], total)}%</td>
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="row" style="margin-top:12px">
+      <div class="card" style="background:#0e1630;border-color:var(--line)">
+        <h2>行為特徵（主型）</h2>
+        <ul>${TYPE_TEXT[pKey].traits.map(t=>`<li>${t}</li>`).join("")}</ul>
+      </div>
+      <div class="card" style="background:#0e1630;border-color:var(--line)">
+        <h2>壓力來源（主型）</h2>
+        <ul>${TYPE_TEXT[pKey].stress.map(t=>`<li>${t}</li>`).join("")}</ul>
+      </div>
+      <div class="card" style="background:#0e1630;border-color:var(--line)">
+        <h2>溝通建議（對你有效）</h2>
+        <ul>${TYPE_TEXT[pKey].comm.map(t=>`<li>${t}</li>`).join("")}</ul>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:12px;background:#0e1630;border-color:var(--line)">
+      <h2>主副型搭配的常見模式</h2>
+      ${buildMixInsights(pKey, sKey)}
+    </div>
+  `;
+  return html;
+}
+
+function buildMixInsights(p, s){
+  // 你可依需求加更多組合說明
+  const key = `${p}${s}`;
+  const map = {
+    "CD": [
+      "做決定前會先驗證標準，但一旦看清風險與邏輯，會快速定調推進。",
+      "優勢：又快又準；風險：對他人節奏容忍度低時，容易被感受到壓力。",
+      "建議：把「決策邊界」說清楚（何時必須定、何時可再看），減少誤解。"
+    ],
+    "CS": [
+      "重正確也重合作，常在「把事情做好」與「不要傷到人」之間自我調整。",
+      "優勢：可靠、可複製、能陪跑；風險：容易把別人的節奏也一起扛，造成內耗。",
+      "建議：把責任切層：你負責標準與結論；對方負責跟上與回報。"
+    ],
+    "DC": [
+      "先定方向再補標準，對細節要求提高時，會進入高驗證與高校正。",
+      "優勢：速度快且能落地；風險：遇到不確定時可能變得較強硬。",
+      "建議：先給「暫定版」結論＋驗證清單，讓人知道你不是亂定。"
+    ],
+    "SC": [
+      "先顧穩定與關係，再顧正確與細節，做事步調更謹慎。",
+      "優勢：穩健、少失誤；風險：遇到高時效要求可能壓力增大。",
+      "建議：把決策時限外顯化（何時一定要定），減少拖延與焦慮。"
+    ],
+    "CI": [
+      "重邏輯也重表達，能把複雜內容講得清楚，但會在被誤解時特別在意。",
+      "建議：先說結論再補依據，並用例子讓對方跟上。"
+    ],
+    "DS": [
+      "結果導向但也會顧團隊承受度，常見在扛責角色。",
+      "建議：把期待講成步驟與里程碑，避免只剩壓力沒有路徑。"
+    ]
+  };
+
+  const lines = map[key] || [
+    "此組合的具體模式可依你題庫設計再細化。",
+    "建議：用真實工作情境題（主管帶人、課程推進、跨部門協作）再跑一輪，會更貼近你要的用途。"
+  ];
+  return `<ul>${lines.map(x=>`<li>${x}</li>`).join("")}</ul>`;
+}
+
+/** ======= 畫面渲染 ======= */
+function renderScoreBox(){
+  const total = QUESTION_BANK.length;
+  const html = `
+    <table class="table">
+      <thead><tr><th>向度</th><th>分數</th><th>比例</th></tr></thead>
+      <tbody>
+        ${["D","I","S","C"].map(k=>`
+          <tr>
+            <td>${TYPE_TEXT[k].name}</td>
+            <td>${scores[k]}</td>
+            <td>${pct(scores[k], total)}%</td>
+          </tr>
+        `).join("")}
+      </tbody>
+    </table>
+  `;
+  $("scoreBox").innerHTML = html;
+
+  // 提示：若目前題數太少，提醒不要急著解讀
+  const answered = answers.length;
+  if(answered > 0 && answered < Math.min(8, QUESTION_BANK.length)){
+    $("noteBox").textContent = `目前已作答 ${answered} 題；題數越少，結果越容易受當下情境影響。`;
+  }else{
+    $("noteBox").textContent = "";
+  }
+}
+
+function render(){
+  calcScores();
+  renderScoreBox();
+
+  const total = QUESTION_BANK.length;
+  const answered = answers.length;
+  $("progressText").textContent = `${Math.min(answered, total)} / ${total}`;
+  $("progressFill").style.width = `${total ? Math.round((answered/total)*100) : 0}%`;
+
+  const started = idx >= 0;
+  $("backBtn").disabled = !(started && idx > 0);
+  $("startBtn").disabled = started;
+
+  const opts = $("opts");
+  opts.innerHTML = "";
+
+  if(!started){
+    $("qText").textContent = "按「開始」開始測驗";
+    return;
+  }
+
+  if(idx >= total){
+    $("qText").textContent = "已完成";
+    // 顯示分析
+    $("resultBox").innerHTML = buildAnalysis();
+    return;
+  }
+
+  const q = QUESTION_BANK[idx];
+  $("qText").innerHTML = `<span class="qno">第 ${idx+1} 題</span><div style="height:6px"></div>${escapeHtml(q.text)}`;
+
+  q.options.forEach((opt, i)=>{
+    const btn = document.createElement("button");
+    btn.className = "opt";
+    btn.innerHTML = `<b style="color:var(--accent)">(${String.fromCharCode(65+i)})</b> ${escapeHtml(opt.label)}`;
+    btn.onclick = ()=> pickOption(i);
+    opts.appendChild(btn);
+  });
+}
+
+function pickOption(optionIndex){
+  const q = QUESTION_BANK[idx];
+  const opt = q.options[optionIndex];
+
+  // 若使用者回到某題重選：截斷後面答案
+  answers = answers.slice(0, idx);
+  answers.push({
+    qid: q.id,
+    pickIndex: optionIndex,
+    key: opt.key,
+    label: opt.label
+  });
+
+  idx += 1;
+  render();
+}
+
+function goBack(){
+  if(idx <= 0) return;
+  idx -= 1;
+  // 回到上一題：也要把目前題之後的答案截掉，避免分數不一致
+  answers = answers.slice(0, idx);
+  render();
+}
+
+function start(){
+  idx = 0;
+  render();
+}
+
+function exportAnswers(){
+  const payload = {
+    exportedAt: new Date().toISOString(),
+    totalQuestions: QUESTION_BANK.length,
+    scores,
+    sorted: sortedTypes(),
+    answers
+  };
+  const text = JSON.stringify(payload, null, 2);
+  // 下載成檔案
+  const blob = new Blob([text], {type:"application/json;charset=utf-8"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "disc_作答紀錄.json";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+function escapeHtml(str){
+  return String(str).replace(/[&<>"']/g, s => ({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+  }[s]));
+}
+
+/** ======= 題庫編輯器 ======= */
+function loadBankToEditor(){
+  $("bankEditor").value = JSON.stringify(QUESTION_BANK, null, 2);
+  $("bankStatus").textContent = `目前題數：${QUESTION_BANK.length} 題`;
+}
+
+function applyBankFromEditor(){
+  try{
+    const obj = JSON.parse($("bankEditor").value);
+    // 基本驗證
+    if(!Array.isArray(obj) || obj.length === 0) throw new Error("題庫必須是陣列，且至少 1 題");
+    for(const q of obj){
+      if(typeof q.text !== "string" || !Array.isArray(q.options) || q.options.length !== 4){
+        throw new Error("每題需包含 text，且 options 必須是 4 個選項");
+      }
+      for(const o of q.options){
+        if(!["D","I","S","C"].includes(o.key)) throw new Error("選項 key 必須是 D/I/S/C");
+        if(typeof o.label !== "string") throw new Error("選項 label 必須是文字");
+      }
+    }
+    QUESTION_BANK = obj.map((q, i)=> ({ id: q.id ?? (i+1), ...q }));
+    $("bankStatus").textContent = `套用成功：目前題數 ${QUESTION_BANK.length} 題`;
+    resetAll();
+    loadBankToEditor();
+  }catch(e){
+    $("bankStatus").textContent = `套用失敗：${e.message}`;
+  }
+}
+
+/** ======= 綁定事件 ======= */
+$("startBtn").addEventListener("click", start);
+$("backBtn").addEventListener("click", goBack);
+$("resetBtn").addEventListener("click", ()=> { resetAll(); $("startBtn").disabled = false; });
+$("exportBtn").addEventListener("click", exportAnswers);
+$("applyBankBtn").addEventListener("click", applyBankFromEditor);
+
+loadBankToEditor();
+resetAll();
+</script>
+</body>
+</html>
