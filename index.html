@@ -45,8 +45,8 @@
 <body>
 <div class="wrap">
   <div class="card">
-    <h1 id="title">DISC測驗</h1>
-    <p class="small" id="subtitle">選一個面向開始作答（各10題）。</p>
+    <h1>DISC測驗</h1>
+    <p class="small" id="subtitle">選一個面向開始作答（各 10 題）。每個面向獨立作業，完成就立刻出結果。</p>
 
     <div id="menu" class="menuGrid"></div>
 
@@ -250,114 +250,34 @@ const BANK = {
 };
 
 /** =========================
- * 口語、好理解、打入人心：主型＋複型（主輔）內容庫
- * - 規則：同一組合（DI vs ID）用不同語氣與重點
+ * 口語主型
  * ========================= */
 const TYPE_CORE = {
-  D:{headline:"你比較像「推動前進的人」",feel:"你在乎的是：事情要往前，不要卡在原地。",gift:["敢決定、敢扛責任","遇到問題會想辦法打通","對目標很有方向感"],trap:["容易急，別人跟不上你就會煩","你越在意，就越直接，容易被誤會在逼"],need:"你需要的不是別人完美，而是『有回應、有進度、有下一步』。"},
-  I:{headline:"你比較像「把人連起來的人」",feel:"你在乎的是：有互動、有回應、有一起的感覺。",gift:["能帶氣氛、能凝聚","很會用方式讓人願意配合","直覺抓得到人心"],trap:["冷回應會讓你很不安","你越在意就越想確認，反而容易累"],need:"你需要的是『被回應、被理解、被放在心上』。"},
-  S:{headline:"你比較像「把局穩住的人」",feel:"你在乎的是：穩、順、不要互相傷到。",gift:["可靠、能陪跑","會照顧別人的承受度","能把日常撐起來"],trap:["容易忍，忍到最後才說","怕衝突，會把自己放後面"],need:"你需要的是『可預期、被體諒節奏、溫和但清楚的界線』。"},
-  C:{headline:"你比較像「把品質顧好的人」",feel:"你在乎的是：清楚、正確、不要一直反覆。",gift:["細、準、能抓風險","會把事情做成可複製","標準感強，品質穩"],trap:["標準不清你會很焦躁","越不確定越想檢查，腦會停不下來"],need:"你需要的是『定義清楚、標準一致、資訊足夠』。"}
+  D:{headline:"你比較像「推動前進的人」",feel:"你在乎的是：事情要往前，不要卡在原地。",need:"你需要的不是別人完美，而是『有回應、有進度、有下一步』。"},
+  I:{headline:"你比較像「把人連起來的人」",feel:"你在乎的是：有互動、有回應、有一起的感覺。",need:"你需要的是『被回應、被理解、被放在心上』。"},
+  S:{headline:"你比較像「把局穩住的人」",feel:"你在乎的是：穩、順、不要互相傷到。",need:"你需要的是『可預期、被體諒節奏、溫和但清楚的界線』。"},
+  C:{headline:"你比較像「把品質顧好的人」",feel:"你在乎的是：清楚、正確、不要一直反覆。",need:"你需要的是『定義清楚、標準一致、資訊足夠』。"}
 };
 
-// 12 組主輔（複型）——每組都不一樣、口語、可直接複製分享
+/** =========================
+ * 12 組主輔（複型）— 每組不同解析
+ * ========================= */
 const COMBO = {
-  DI:{
-    title:"DI（主D／複型I）",
-    oneLiner:"你是「要結果，也要人跟上」的那種。",
-    why:"你不是只想快，你是想『帶著大家一起快』。",
-    inStress:"壓力一大，你會更直、更想立刻定案；你心裡其實在說：拜託不要再卡了。",
-    key:"對你來說，最重要的是：有下一步、也有回應。",
-    do:"用一個句型就很有用：『我想推進，也想顧到你。你覺得A或B哪個比較做得到？』"
-  },
-  DS:{
-    title:"DS（主D／複型S）",
-    oneLiner:"你是「推進，但不想把人壓垮」的那種。",
-    why:"你會扛，是因為你想讓局面穩住。",
-    inStress:"你可能表面更強硬，內在其實更怕事情失控、也怕關係受傷。",
-    key:"你需要的是：進度清楚、節奏也能跟得上。",
-    do:"把速度放流程：里程碑＋回報點，不用一直靠催。"
-  },
-  DC:{
-    title:"DC（主D／複型C）",
-    oneLiner:"你是「先定方向，再把標準補齊」的那種。",
-    why:"你要的是快，但更怕後面翻車重來。",
-    inStress:"你會變得又快又嚴，因為你在防止『之後更麻煩』。",
-    key:"你最需要：暫定結論＋清楚驗證條件。",
-    do:"一句話：『我們先走A，如果出現B，就立刻調整。』"
-  },
-  ID:{
-    title:"ID（主I／複型D）",
-    oneLiner:"你是「先連上，再推進」的那種。",
-    why:"你要的是同一邊的感覺，有了這個你就很能衝。",
-    inStress:"拿不到回應時，你會從溫柔變急，開始推；其實你在要一個安心。",
-    key:"你最需要：先有回應，再有行動。",
-    do:"把『一直確認』改成『約一個時間』：『我想跟你對齊，我們今晚9點聊10分鐘可以嗎？』"
-  },
-  IS:{
-    title:"IS（主I／複型S）",
-    oneLiner:"你是「很在乎互動，也很在乎舒服」的那種。",
-    why:"你不想吵，你只想被好好對待。",
-    inStress:"你會更需要回應，但又怕造成壓力，所以變成你自己內耗。",
-    key:"你最需要：溫柔的回應＋穩定的陪伴。",
-    do:"把期待縮小到一個可做到的請求：『你今天回我一句就好。』"
-  },
-  IC:{
-    title:"IC（主I／複型C）",
-    oneLiner:"你是「要被懂，也要被懂得很精準」的那種。",
-    why:"你補細節不是囉嗦，是你怕誤會拉遠距離。",
-    inStress:"你越不安會講越多；對方接不住時你會很失落。",
-    key:"你最需要：先對齊理解，再談細節。",
-    do:"先一句結論＋兩個重點：『我在意的是X和Y，細節我再補給你。』"
-  },
-  SD:{
-    title:"SD（主S／複型D）",
-    oneLiner:"你是「先穩住，但該推會推」的那種。",
-    why:"你通常先顧和氣，但你不是沒有底線。",
-    inStress:"你會忍到最後才一次講很重，然後別人以為你突然翻臉。",
-    key:"你最需要：提早被理解你的節奏與界線。",
-    do:"提早講10%的需求：『我需要提前一天知道變更。』"
-  },
-  SI:{
-    title:"SI（主S／複型I）",
-    oneLiner:"你是「很會照顧人、也很需要被回應」的那種。",
-    why:"你把關係放很前面，所以你常常先委屈自己。",
-    inStress:"你會更吞、更安撫，但心裡其實很想聽到一句『我知道』。",
-    key:"你最需要：穩定＋一句回應。",
-    do:"一句話就夠：『我知道你忙，但你回我一句，我會安心很多。』"
-  },
-  SC:{
-    title:"SC（主S／複型C）",
-    oneLiner:"你是「要穩，也要規則清楚」的那種。",
-    why:"你不怕做事，你怕的是一直改、一直反覆。",
-    inStress:"你會默默補洞、默默收拾，最後把自己累壞。",
-    key:"你最需要：標準先講清楚，事情才會穩。",
-    do:"先講3件事：完成定義、期限、回報格式。"
-  },
-  CD:{
-    title:"CD（主C／複型D）",
-    oneLiner:"你是「先確認正確，確定後推很快」的那種。",
-    why:"你不是慢，你是在保護結果不要翻車。",
-    inStress:"別人越催你越緊；你心裡在想：你催我，等下出事誰扛？",
-    key:"你最需要：資訊到位＋你能承諾的定案時間。",
-    do:"一句話：『我缺X，拿到後我在Y小時內給結論。』"
-  },
-  CI:{
-    title:"CI（主C／複型I）",
-    oneLiner:"你是「要一致，也要被公平理解」的那種。",
-    why:"你在守的是信任：不要誤會、不要失信。",
-    inStress:"對方越隨便，你越想講清楚；你越講，對方越想逃。",
-    key:"你最需要：對方認真聽＋標準被尊重。",
-    do:"用例子說最有力：『上次X讓我不安，所以我需要Y標準。』"
-  },
-  CS:{
-    title:"CS（主C／複型S）",
-    oneLiner:"你是「把事做對，也把人顧好」的那種。",
-    why:"你可靠到讓人放心，但也最容易累。",
-    inStress:"你會越補越多，最後覺得只有你在扛。",
-    key:"你最需要：制度感，讓照顧不是靠你一個人。",
-    do:"把照顧變規則：完成定義＋回報節奏，別一直救火。"
-  },
+  DI:{title:"DI型（主D／副I）",one:"你是那種：先把事推動起來，也會在意大家跟不跟得上。",deep:"你不只是要快，你要的是『一起快』。所以你會推進，也會想把人拉回同一邊。",stress:"壓力大時，你會更直、更快定案；別人感受到的是被催，你心裡其實在說：別再卡了。",tip:"把推進說成邀請：『我想往前，也想顧到你。A或B你選哪個比較做得到？』"},
+  DS:{title:"DS型（主D／副S）",one:"你是那種：要推進，但不想把人壓垮。",deep:"你會扛，是因為你想讓局面穩住。你推得快，往往是為了保護整體不失控。",stress:"你可能表面更硬，內在其實更怕事情拖到翻車、也怕關係受傷。",tip:"用流程保速度：里程碑＋回報點，讓推進不靠催。"},
+  DC:{title:"DC型（主D／副C）",one:"你是那種：先定方向，再把標準補齊的人。",deep:"你要快，但更怕後面重來。你追的是『快＋不留後遺症』。",stress:"你會變得又快又嚴，因為你在防止『之後更麻煩』。",tip:"一句話就很穩：『先走A；如果出現B，我們就調整。』"},
+
+  ID:{title:"ID型（主I／副D）",one:"你是那種：先連上人，再把事情推進的人。",deep:"你需要先有同一邊的感覺，有了這個，你的行動力會很強。",stress:"拿不到回應時，你會從溫柔變急，開始推；其實你在要一個安心。",tip:"把確認改成約定：『我想對齊一下，我們今晚9點聊10分鐘可以嗎？』"},
+  IS:{title:"IS型（主I／副S）",one:"你是那種：很在乎互動，也很在乎舒服的人。",deep:"你不想吵，你只想被好好對待。你會維持氣氛，也會顧彼此的承受度。",stress:"你越在意越想要回應，但又怕造成壓力，所以變成你自己內耗。",tip:"把期待縮小成一個可做到的請求：『你今天回我一句就好。』"},
+  IC:{title:"IC型（主I／副C）",one:"你是那種：要被懂，而且要被懂得很精準的人。",deep:"你補細節不是囉嗦，是你怕誤會讓距離變遠。你在守的是連結的品質。",stress:"你越不安會講越多；對方接不住時，你會很失落，覺得自己被敷衍。",tip:"先一句結論＋兩個重點：『我在意的是X和Y，細節我再補。』"},
+
+  SD:{title:"SD型（主S／副D）",one:"你是那種：先穩住局面，但該推就會推的人。",deep:"你通常先顧和氣與節奏；但當你覺得一直拖，你會用推進把局勢拉回來。",stress:"你容易忍到最後才一次講很重，然後別人以為你突然翻臉。",tip:"提早說10%的需求：『我需要提前一天知道變更。』"},
+  SI:{title:"SI型（主S／副I）",one:"你是那種：很會照顧人，也很需要被回應的人。",deep:"你把關係放很前面，所以你常常先委屈自己，讓大家都舒服。",stress:"你會更吞、更安撫，但心裡其實很想聽到一句『我知道』。",tip:"一句話就夠：『你回我一句，我會安心很多。』"},
+  SC:{title:"SC型（主S／副C）",one:"你是那種：要穩，也要規則清楚的人。",deep:"你不怕做事，你怕的是一直改、一直反覆。你要的是可預期。",stress:"你會默默補洞、默默收拾，最後把自己累壞。",tip:"先講清3件事：完成定義、期限、回報格式。"},
+
+  CD:{title:"CD型（主C／副D）",one:"你是那種：先確認正確，確定後推很快的人。",deep:"你不是慢，你是在保護結果不要翻車。你要的是『對了再快』。",stress:"別人越催你越緊；你心裡在想：你催我，出事誰扛？",tip:"直接講承諾：『我缺X，拿到後我在Y小時內給結論。』"},
+  CI:{title:"CI型（主C／副I）",one:"你是那種：要一致，也要被公平理解的人。",deep:"你在守信任：不要誤會、不要失信。你希望對方認真聽，因為你是認真的那一個。",stress:"對方越隨便，你越想講清楚；你越講，對方越想逃。",tip:"用例子最有力：『上次X讓我不安，所以我需要Y標準。』"},
+  CS:{title:"CS型（主C／副S）",one:"你是那種：把事做對，也把人顧好的人。",deep:"你可靠到讓人放心，但也最容易累。你常把責任與關係一起扛。",stress:"你會越補越多，最後覺得只有你在扛。",tip:"把照顧變制度：完成定義＋回報節奏，別一直救火。"},
 };
 
 /** =========================
@@ -368,6 +288,7 @@ let qIndex = 0;
 let scores = {D:0,I:0,S:0,C:0};
 
 const $ = (id)=>document.getElementById(id);
+const ORDER = ["D","I","S","C"]; // 同分時用這個順序決定主/副
 
 function escapeHtml(str){
   return String(str).replace(/[&<>"']/g, s => ({
@@ -376,24 +297,27 @@ function escapeHtml(str){
 }
 function pct(v,total){ return total===0 ? 0 : Math.round((v/total)*100); }
 
-function sortedScores(scoreObj){
-  const arr = Object.entries(scoreObj).map(([k,v])=>({k,v}));
-  arr.sort((a,b)=>b.v-a.v);
-  return arr;
+function ranked(scoreObj){
+  // 先照分數大到小，同分照 ORDER
+  return ORDER.map(k=>({k,v:scoreObj[k]}))
+    .sort((a,b)=> (b.v-a.v) || (ORDER.indexOf(a.k)-ORDER.indexOf(b.k)));
 }
-function classify(scoreObj){
-  const arr = sortedScores(scoreObj);
-  const max = arr[0].v;
-  const second = arr.find(x=>x.v < max)?.v ?? max;
-  const primary = arr.filter(x=>x.v===max).map(x=>x.k);
-  const secondary = arr.filter(x=>x.v===second && !primary.includes(x.k)).map(x=>x.k);
-  return {arr,primary,secondary};
-}
-function getCombo(primary, secondary){
-  if(primary.length===1 && secondary.length===1){
-    return COMBO[`${primary[0]}${secondary[0]}`] || null;
-  }
-  return null;
+
+function pickPrimarySecondary(scoreObj){
+  const arr = ranked(scoreObj);
+  const primary = arr[0]; // 第一名
+  const secondary = arr[1]; // 第二名
+
+  const primaryKey = primary.v>0 ? primary.k : null;
+  // ✅ 使用者規則：第二名如果是 0，就算「沒有副型」
+  const secondaryKey = (secondary.v>0) ? secondary.k : null;
+
+  // 若第一名也是 0（理論上不會，因為做完 10 題一定>0），保底處理
+  return {
+    arr,
+    primaryKey: primaryKey || "D",
+    secondaryKey
+  };
 }
 
 function resetSection(){
@@ -405,36 +329,38 @@ function resetSection(){
 
 function buildResult(){
   const total = Object.values(scores).reduce((a,b)=>a+b,0);
-  const {arr,primary,secondary} = classify(scores);
+  const {arr,primaryKey,secondaryKey} = pickPrimarySecondary(scores);
 
-  const mainKey = primary[0];
-  const main = TYPE_CORE[mainKey];
+  const main = TYPE_CORE[primaryKey];
 
-  const combo = getCombo(primary, secondary);
+  const comboKey = secondaryKey ? `${primaryKey}${secondaryKey}` : null;
+  const combo = comboKey ? COMBO[comboKey] : null;
 
-  const pText = primary.length===1 ? primary[0] : primary.join("/");
-  const sText = secondary.length===1 ? secondary[0] : (secondary.length ? secondary.join("/") : "—");
+  // 只顯示 >0 的向度（使用者規則：0 就算沒有）
+  const nonZero = arr.filter(x=>x.v>0);
+
+  const primaryLabel = primaryKey;
+  const secondaryLabel = secondaryKey ? secondaryKey : "沒有";
 
   let comboBlock = "";
   if(combo){
     comboBlock = `
       <div class="box" style="margin-top:12px">
-        <h2 style="margin-top:0">複型分析：${combo.title}</h2>
-        <p style="color:var(--text)"><b>${combo.oneLiner}</b></p>
+        <h2 style="margin-top:0">副型分析：${combo.title}</h2>
+        <p style="color:var(--text)"><b>${combo.one}</b></p>
         <ul>
-          <li><b>你為什麼會這樣：</b>${combo.why}</li>
-          <li><b>壓力大時會長什麼樣：</b>${combo.inStress}</li>
-          <li><b>你最在意的點：</b>${combo.key}</li>
+          <li><b>你其實在守什麼：</b>${combo.deep}</li>
+          <li><b>壓力大時會怎麼跑出來：</b>${combo.stress}</li>
         </ul>
-        <p class="small" style="color:var(--text)"><b>一句話就能更順：</b>${combo.do}</p>
+        <p class="small" style="color:var(--text)"><b>一句話就能更順：</b>${combo.tip}</p>
       </div>
     `;
   } else {
     comboBlock = `
       <div class="box" style="margin-top:12px">
-        <h2 style="margin-top:0">複型分析</h2>
-        <p>你的分數比較接近或並列，代表你在這個面向會看情境切換策略。這很常見，也表示你有彈性。</p>
-        <p class="small">如果你想要更明確的複型，可以把題目擴充到 20 題以上，差異會更拉開。</p>
+        <h2 style="margin-top:0">副型分析</h2>
+        <p>你這次的第二名分數是 0，所以依你的規則判定為「沒有副型」。</p>
+        <p class="small">這通常代表：在這個面向裡，你的反應很集中、很一致，主型特徵非常明顯。</p>
       </div>
     `;
   }
@@ -442,8 +368,8 @@ function buildResult(){
   return `
     <div class="box">
       <h2 style="margin-top:0">你的結果（這個面向）</h2>
-      <div class="tag">主型：<b style="color:var(--text)">${pText}</b></div>
-      <div class="tag">複型：<b style="color:var(--text)">${sText}</b></div>
+      <div class="tag">主型：<b style="color:var(--text)">${primaryLabel}</b></div>
+      <div class="tag">副型：<b style="color:var(--text)">${secondaryLabel}</b></div>
 
       <div class="box" style="margin-top:12px">
         <h2 style="margin-top:0">一句話形容你</h2>
@@ -452,31 +378,11 @@ function buildResult(){
         <p class="small" style="color:var(--text)"><b>你需要的是：</b>${main.need}</p>
       </div>
 
-      <div class="grid" style="margin-top:12px">
-        <div class="box">
-          <h2 style="margin-top:0">你帶來的優點</h2>
-          <ul>${main.gift.map(x=>`<li>${x}</li>`).join("")}</ul>
-        </div>
-        <div class="box">
-          <h2 style="margin-top:0">你容易被誤會/卡住的點</h2>
-          <ul>${main.trap.map(x=>`<li>${x}</li>`).join("")}</ul>
-        </div>
-      </div>
-
-      <div class="box" style="margin-top:12px">
-        <h2 style="margin-top:0">你可以試一個小調整</h2>
-        <ul>${mainKey==="D" ? `<li>把「急」換成「下一步」：先定下一個最小可行動作。</li><li>用選項句代替催促：你能做A或B？</li>` :
-              mainKey==="I" ? `<li>把「想確認」換成「約時間」：我們什麼時候談10分鐘？</li><li>先一句結論再補感受，對方更接得住。</li>` :
-              mainKey==="S" ? `<li>提早說10%的需求，不用忍到最後才爆。</li><li>把界線說成照顧合作：這樣我比較跟得上。</li>` :
-              `<li>先訂3條必要標準，其餘允許彈性，腦會比較停得下來。</li><li>用暫定結論＋驗證條件，避免無限反覆。</li>`}
-        </ul>
-      </div>
-
-      <h2>分數分布</h2>
+      <h2>分數分布（0 不顯示）</h2>
       <table class="table">
         <thead><tr><th>向度</th><th>分數</th><th>比例</th></tr></thead>
         <tbody>
-          ${arr.map(x=>`
+          ${nonZero.map(x=>`
             <tr>
               <td>${x.k}</td>
               <td>${x.v}</td>
@@ -566,4 +472,3 @@ goHome();
 </script>
 </body>
 </html>
-
