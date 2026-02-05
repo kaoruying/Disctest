@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>DISC 三面向測驗（可分開作答＋任兩面向比較）</title>
+  <title>DISC測驗</title>
   <style>
     :root{
       --bg:#0b1220; --card:#121b2e; --line:#24304c;
@@ -19,9 +19,8 @@
     p{margin:8px 0;line-height:1.75;color:var(--muted)}
     .small{font-size:13px;color:var(--muted)}
     .warn{color:var(--warn)}
-    .progress{display:flex;justify-content:space-between;gap:10px;align-items:center;color:var(--muted);font-size:14px}
-    .bar{height:10px;background:#0e1630;border:1px solid var(--line);border-radius:999px;overflow:hidden;margin-top:10px}
-    .fill{height:100%;width:0%;background:linear-gradient(90deg,#7aa2ff,#a77bff)}
+    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+    .pill{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border:1px solid var(--line);border-radius:999px;color:var(--muted)}
     .q{font-size:18px;color:var(--text);margin-top:14px}
     .opts{margin-top:10px;display:grid;gap:10px}
     button{
@@ -41,51 +40,47 @@
     li{margin:5px 0}
     .table{width:100%;border-collapse:collapse;margin-top:8px}
     .table th,.table td{border-bottom:1px solid var(--line);padding:10px 6px;text-align:left}
-    .pill{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border:1px solid var(--line);border-radius:999px;color:var(--muted)}
-    .center{display:grid;gap:10px}
     .muted{color:var(--muted)}
-    .row{display:flex;gap:10px;flex-wrap:wrap}
+    .menuGrid{display:grid;gap:10px;margin-top:10px}
   </style>
 </head>
 <body>
 <div class="wrap">
   <div class="card">
-    <h1 id="title">DISC 三面向測驗（可分開作答）</h1>
-    <p class="small" id="subtitle">
-      生活／工作／感情三個面向可以<strong>分開作</strong>，不必一次做完。只要你完成<strong>任兩個面向</strong>，同一頁就會自動產出「相互分析（比較報告）」。
-    </p>
+    <h1 id="title">DISC測驗</h1>
+    <p class="small" id="subtitle">選一個面向開始作答（各 10 題）。每個面向的作答與結果彼此獨立。</p>
 
-    <div class="progress">
-      <div id="progressText">尚未開始</div>
-      <div class="small" id="ruleText">作答原則：選「你多數情境下最常出現的反應」</div>
+    <div id="menu" class="menuGrid"></div>
+
+    <div id="testArea" style="display:none">
+      <div class="row" style="margin-top:10px">
+        <span class="pill" id="sectionPill"></span>
+        <span class="pill" id="qPill"></span>
+      </div>
+
+      <div class="q" id="question"></div>
+      <div class="opts" id="options"></div>
+
+      <div class="footer">
+        <button class="secondary smallBtn" id="backBtn" disabled>上一題</button>
+        <button class="secondary smallBtn" id="restartBtn">重作此面向</button>
+        <button class="secondary smallBtn" id="homeBtn">回首頁</button>
+      </div>
+
+      <div id="result" style="margin-top:14px"></div>
     </div>
-    <div class="bar"><div class="fill" id="progressFill"></div></div>
-
-    <div id="menuPanel" class="center" style="margin-top:12px"></div>
-
-    <div class="q" id="question" style="display:none"></div>
-    <div class="opts" id="options"></div>
-
-    <div class="footer">
-      <button class="secondary smallBtn" id="backBtn" disabled>上一題</button>
-      <button class="secondary smallBtn" id="toMenuBtn">回選單</button>
-      <button class="secondary smallBtn" id="viewReportBtn">查看報告</button>
-      <button class="secondary smallBtn" id="resetBtn">全部重設</button>
-    </div>
-
-    <div id="result" style="margin-top:14px"></div>
   </div>
 </div>
 
 <script>
 /** =========================
- * 題庫：三面向各 10 題
+ * 題庫：三面向各 10 題（彼此獨立）
  * ========================= */
 const BANK = {
   life: {
     key: "life",
     name: "生活面向",
-    intro: "看你在日常節奏、家人朋友互動、變動與壓力下，習慣怎麼保護自己、怎麼維持秩序或關係。",
+    intro: "看你在日常節奏、家人朋友互動、變動與壓力下的習慣反應。",
     questions: [
       {q:"臨時被打亂原本計畫（例如行程改、事情插隊）時，你最常先做的是？",
        o:[{k:"D",t:"先定新的安排，確保事情能繼續前進"},
@@ -143,7 +138,7 @@ const BANK = {
   work: {
     key: "work",
     name: "工作面向",
-    intro: "看你在責任、效率、流程、協作與壓力下的習慣反應，常能反映你在職場的主型與輔型。",
+    intro: "看你在責任、效率、流程、協作與壓力下的習慣反應。",
     questions: [
       {q:"遇到急件但資訊不足時，你最常怎麼做？",
        o:[{k:"D",t:"先做可逆決策，推進再調整"},
@@ -257,305 +252,164 @@ const BANK = {
   }
 };
 
-const KEYS = ["life","work","love"];
-const TOTAL_MAX = KEYS.reduce((sum,k)=>sum + BANK[k].questions.length, 0);
-
 /** =========================
- * 四型素材（基礎）
+ * 四型素材
  * ========================= */
 const TYPE = {
-  D: {
-    name: "D（主導）",
-    essence: "你在意的是推進與結果。當事情能被處理、能往前走，你會比較安定；拖著不動反而會讓你更焦躁。",
-    needs: ["清楚的目標與期限", "能做主、能推進", "被尊重專業與判斷"],
-    stress: ["拖延、卡關、沒人承擔", "討論很久卻不決定", "被動等待、無法掌控節奏"],
-    shadow: "壓力大時，你可能更急、更直接；你不是故意壓人，而是你在用『推進』讓自己回到有掌控的狀態。",
-    repair: ["把下一步定小一點：先做到 A", "用里程碑取代催促：何時回報、回報什麼", "先暫定決策，再約定驗證條件與調整點"],
-    howToTreat: ["先講結論與期限", "給可選方案與權責邊界", "把事情落到里程碑與回報格式"],
-    speak: [
-      "句型：『我有點急，是因為事情卡住了。我需要我們在（時間）前定下一步。你比較能做 A 還是 B？』",
-      "句型：『我想推進，不是要逼你。我們先做到 A，剩下的再一起調整。』"
-    ],
-  },
-  I: {
-    name: "I（影響）",
-    essence: "你在意的是連結與互動。被回應、被理解會讓你比較有力量；互動變冷或被忽略時，你會更不安。",
-    needs: ["被回應、被理解", "有溫度的交流", "被肯定與被邀請參與"],
-    stress: ["被忽略、被冷處理", "氣氛僵硬、互動不順", "只談規則、不談感受"],
-    shadow: "壓力大時，你可能更想要確認與回應；你不是黏，而是你很在意『我們有沒有連在一起』。",
-    repair: ["先確認事實再說感受：我看到 X，所以我感到 Y", "把期待講成可做到的請求", "把『求確認』改成『求安排』：我們什麼時候談？"],
-    howToTreat: ["先給回應（短短一句也可以）", "先肯定再談調整", "把下一步講成一起做，並落到具體安排"],
-    speak: [
-      "句型：『我有點不安，是因為我感覺我們沒有連上。我想聽聽你現在的想法。』",
-      "句型：『我需要你給我一個回應，不用很長，一句也可以，讓我知道我們在同一邊。』"
-    ],
-  },
-  S: {
-    name: "S（穩定）",
-    essence: "你在意的是安穩與合作。你很努力維持關係的平衡，也會把他人的狀態放在心上；穩定會讓你比較安心。",
-    needs: ["可預期的節奏", "溫和但清楚的界線", "關係裡的互相體諒"],
-    stress: ["被逼很急、變動頻繁", "衝突太直接、氣氛緊", "需要立刻表態但沒準備好"],
-    shadow: "壓力大時，你可能更傾向忍耐或延後衝突；你不是沒想法，而是你在保護關係、也保護自己不被拉扯。",
-    repair: ["先講影響再講需求：這樣我會跟不上，所以我需要…", "把界線說成照顧合作：我需要提前一天知道變更", "練習小步表態：先說 20% 的真實"],
-    howToTreat: ["先給緩衝與預告", "用溫和但清楚的方式說需求", "避免臨時變更與逼迫"],
-    speak: [
-      "句型：『我需要一點時間消化，但我願意談。我們可以約（時間）再把事情說清楚。』",
-      "句型：『我不是不配合，我是需要穩一點的步驟。你可以先給我一個明確的下一步嗎？』"
-    ],
-  },
-  C: {
-    name: "C（謹慎）",
-    essence: "你在意的是正確與一致。標準清楚、邏輯成立時你會放鬆；規則反覆或資訊不足時，你會更焦慮，因為你在控風險。",
-    needs: ["清楚定義與標準", "可驗證的依據", "一致性與可追蹤"],
-    stress: ["標準不清、一直被改", "被迫在資訊不足下決策", "粗糙、不一致、無法驗證"],
-    shadow: "壓力大時，你可能更難放手、反覆檢查；你不是故意挑剔，而是你在避免之後更大成本的反覆與失控。",
-    repair: ["先暫定結論＋驗證清單：先做 A，若出現 B 就調整", "把標準縮到『必要標準』，其餘允許彈性", "用檢核表取代反覆思考"],
-    howToTreat: ["先講標準與定義", "給依據與範圍", "允許思考/核對時間，避免臨時大改"],
-    speak: [
-      "句型：『我會比較安心，如果我們先把標準說清楚：什麼算完成？什麼不算？』",
-      "句型：『我不是故意挑剔，我是在避免之後反覆。我們先對齊定義，後面會更省力。』"
-    ],
-  }
+  D:{name:"D（主導）",essence:"你在意推進與結果。事情能被處理、能往前走，你比較安定。",needs:["清楚目標與期限","能做主、能推進","被尊重判斷"],stress:["拖延卡關","討論很久不決定","被動等待"],shadow:"壓力大時你可能更急更直接；你在用推進讓自己回到掌控。",repair:["下一步縮小：先做到A","用里程碑取代催促","暫定決策＋驗證條件"],howToTreat:["先講結論與期限","給可選方案與權責邊界","把事情落到回報格式"],speak:["句型：『我有點急是因為卡住了。我需要在（時間）前定下一步。你比較能做A還是B？』","句型：『我想推進不是要逼你。我們先做到A，剩下再調整。』"]},
+  I:{name:"I（影響）",essence:"你在意連結與互動。被回應、被理解會讓你有力量。",needs:["被回應被理解","有溫度交流","被肯定被邀請"],stress:["被忽略冷處理","氣氛僵硬","只談規則不談感受"],shadow:"壓力大時你更想要確認與回應；你在守護連結。",repair:["先事實後感受","把期待講成可做到請求","把求確認改成求安排"],howToTreat:["先給回應","先肯定再談調整","下一步落到具體安排"],speak:["句型：『我有點不安因為我感覺我們沒連上。我想聽聽你怎麼看。』","句型：『你不用講很多，一句回應也可以，讓我知道我們在同一邊。』"]},
+  S:{name:"S（穩定）",essence:"你在意安穩與合作。你會顧關係與節奏，穩定讓你安心。",needs:["可預期節奏","溫和但清楚界線","互相體諒"],stress:["被逼很急","衝突太直接","要立刻表態"],shadow:"壓力大時你可能更忍耐或延後衝突；你在保護關係與自己。",repair:["先講影響再講需求","界線說成照顧合作","練習小步表態"],howToTreat:["先給緩衝與預告","溫和但清楚說需求","避免臨時變更逼迫"],speak:["句型：『我需要一點時間消化，但我願意談。我們可不可以約（時間）再說清楚？』","句型：『我不是不配合，我是需要穩一點的步驟。可以先給我明確下一步嗎？』"]},
+  C:{name:"C（謹慎）",essence:"你在意正確與一致。標準清楚、邏輯成立你會放鬆。",needs:["清楚定義與標準","可驗證依據","一致性可追蹤"],stress:["標準不清一直改","資訊不足被迫決策","粗糙不一致"],shadow:"壓力大時你更想控風險、反覆檢查；你在避免更大成本的翻車。",repair:["暫定結論＋驗證清單","必要標準其餘彈性","用檢核表取代反覆想"],howToTreat:["先講標準與定義","給依據與範圍","允許核對時間避免臨改"],speak:["句型：『我會比較安心，如果先把標準說清楚：什麼算完成？什麼不算？』","句型：『我不是挑剔，我是在避免之後反覆。我們先對齊定義。』"]}
 };
 
 /** =========================
  * 12 種主輔型組合解析（每組不同）
  * ========================= */
 const COMBO = {
-  DI:{title:"DI（推進＋連結）",lines:["你會先把方向與節奏定下來（D），同時也在意人有沒有跟上、互動有沒有對齊（I）。","你不只要結果，你也要『大家願意跟』；所以你會一邊推進、一邊帶動。","壓力大時你可能語氣更直，別人只聽到壓力；你的關鍵練習是把催促換成『清楚邀請＋期限』。"],tip:"先定方向，再用一句話把『一起做的下一步』講清楚。"},
-  DS:{title:"DS（推進＋安穩）",lines:["你會推進事情（D），也很在意關係承受度與長期穩定（S）。","你不喜歡拖，但也不想逼人；你傾向把人一起帶過去。","盲點是內在拉扯：想快又怕給壓力；把壓力放在流程（分工/里程碑），別放在人身上。"],tip:"拆小任務＋固定回報節點，速度自然起來，人也不容易被壓到。"},
-  DC:{title:"DC（推進＋標準）",lines:["你會先推進（D），再用標準與邏輯把事情收斂到穩（C）。","你敢決定，但也不想留下後遺症；所以你會回頭補定義、補規格、補責任。","壓力大時你可能又快又嚴；用『暫定結論＋驗證條件』同時保住速度與安心。"],tip:"用「暫定＋檢核表」代替反覆討論，速度與品質會同時提升。"},
-  ID:{title:"ID（連結＋推進）",lines:["你會先建立互動與氣氛（I），再把行動帶起來（D）。","你能讓人想參與，也敢在關鍵時刻定案。","當你覺得沒回應，容易轉為急著推；先拿到回應再收斂行動，推進更省力。"],tip:"先問一句『你現在怎麼看？』→ 再收斂下一步與期限。"},
-  IS:{title:"IS（連結＋安穩）",lines:["你需要連結與被理解（I），也重視安穩與關係舒適度（S）。","你很會照顧氣氛，也很會讓人安心。","你容易把需求講得太柔，最後變成你在撐；把感受翻成可執行的請求（時間/方式/頻率）。"],tip:"把『希望你在乎』翻成『我希望你在（時間）回我一句，讓我安心』。"},
-  IC:{title:"IC（連結＋清楚）",lines:["你需要互動與被理解（I），也需要語意精準與脈絡完整（C）。","你不只想被安慰，你想被『正確理解』；所以會補背景與細節避免被誤會。","對方跟不上時你會越講越多；先一句結論＋兩個重點，再補例子，你會省力很多。"],tip:"先「一句結論」→「兩個重點」→ 最後才「細節與例子」。"},
-  SD:{title:"SD（安穩＋推進）",lines:["你重視安穩與合作（S），必要時也能推進與承擔（D）。","你常先維持和氣，但拖太久會突然果斷，因為你受不了失控。","你容易忍到很後面才說，最後一次講很重；早一點小表態，界線就不必靠爆發。"],tip:"用『我需要…』的輕量表達，避免累積到撐不住。"},
-  SI:{title:"SI（安穩＋連結）",lines:["你重視安穩（S），也在意互動是否溫暖、是否連得上（I）。","你願意配合也願意照顧人，是很強的『安心感』提供者。","你太會體諒，容易把自己放後面；保留體諒，但別把需求消音。"],tip:"先肯定對方，再提出一個你需要的具體安排（時間/做法）。"},
-  SC:{title:"SC（安穩＋標準）",lines:["你需要安穩與可預期（S），也需要規則一致與可追蹤（C）。","你願意配合，但你要有流程與標準才安心，也更不會反覆。","你可能默默做很多卻不說標準；把必要標準說在前面，才能減少你的補洞成本。"],tip:"先列 3 個『必要標準』，其餘允許彈性，你會輕很多。"},
-  CD:{title:"CD（標準＋推進）",lines:["你先確保正確（C），一旦有底就推得很快（D）。","你不是慢，你是在算清楚風險；確定後執行力會突然加速。","外界催你快會讓你更緊；先講清『你缺什麼資訊』與『拿到後多久能定案』，別人就會跟上你。"],tip:"一句話說清楚「我缺哪個資訊」＋「拿到後多久能定案」。"},
-  CI:{title:"CI（標準＋連結）",lines:["你重視一致與正確（C），也在意互動是否被公平理解（I）。","你在守的是『不要誤會、不要失信』；所以你會想確認對方真的懂你。","你容易在腦中反覆推演；用具體例子取代抽象解釋，能大幅降耗。"],tip:"先給例子（發生什麼）→ 再講標準（你要什麼）。"},
-  CS:{title:"CS（標準＋安穩）",lines:["你重視標準與正確（C），也重視關係承受度與穩定（S）。","你把事做對、做穩，也把人顧好；很可靠，但也容易累，因為你常把責任與關係一起扛。","你不想麻煩別人就自己補；把『回報格式』與『完成定義』訂出來，你就不必一直補洞。"],tip:"你負責標準與結論；對方負責配合與回報。"},
+  DI:{title:"DI（推進＋連結）",lines:["你先推進（D），也在意人有沒有跟上（I）。","你不只要結果，你也要大家願意一起往前。","壓力大時語氣會更直；把催促換成清楚邀請＋期限，互動會更順。"],tip:"先定方向，再把『一起做的下一步』講清楚。"},
+  DS:{title:"DS（推進＋安穩）",lines:["你推進（D），也顧承受度與穩定（S）。","你不喜歡拖，但也不想逼人；會想把人一起帶過去。","盲點是想快又怕壓人；用分工與里程碑把壓力放流程，不放在人。"],tip:"拆小任務＋固定回報節點，速度自然起來。"},
+  DC:{title:"DC（推進＋標準）",lines:["你先推進（D），再用標準收斂（C）。","你敢決定，也不想留下後遺症；會回頭補定義與責任。","壓力大時又快又嚴；用暫定結論＋驗證條件保住速度與安心。"],tip:"用「暫定＋檢核表」代替反覆討論。"},
+  ID:{title:"ID（連結＋推進）",lines:["你先連結（I），再推進（D）。","你能帶動人，也能在關鍵時刻定案。","當你覺得沒回應會急著推；先拿到回應再收斂行動，更省力。"],tip:"先問『你怎麼看？』→ 再收斂下一步與期限。"},
+  IS:{title:"IS（連結＋安穩）",lines:["你要連結（I），也要舒適與穩（S）。","你會照顧氣氛，也會讓人安心。","你容易把需求講太柔，最後自己撐；把感受翻成可執行請求。"],tip:"把『希望你在乎』翻成『我希望你在（時間）回我一句』。"},
+  IC:{title:"IC（連結＋清楚）",lines:["你要被理解（I），也要精準（C）。","你不只想被安慰，你想被正確理解；會補背景避免誤會。","對方跟不上你會越講越多；先一句結論＋兩個重點，再補例子。"],tip:"先一句結論→兩個重點→最後才細節。"},
+  SD:{title:"SD（安穩＋推進）",lines:["你重穩（S），必要時也能推（D）。","你先維持和氣，但拖久了會突然果斷。","你容易忍到最後才說；早一點小表態，界線就不必靠爆發。"],tip:"用『我需要…』的輕量表達，提早說清楚。"},
+  SI:{title:"SI（安穩＋連結）",lines:["你重穩（S），也在意互動溫度（I）。","你願意配合、也願意照顧人，是安心感提供者。","你太會體諒容易把自己放後面；保留體諒，但別消音需求。"],tip:"先肯定對方，再提出一個具體安排。"},
+  SC:{title:"SC（安穩＋標準）",lines:["你要安穩（S），也要一致標準（C）。","你願意配合，但需要流程與規則才安心。","你可能默默補很多卻不說標準；把必要標準說在前面，才能減少補洞。"],tip:"先列 3 個必要標準，其餘允許彈性。"},
+  CD:{title:"CD（標準＋推進）",lines:["你先確保正確（C），確定後推很快（D）。","你不是慢，你是在算清風險；確定後執行力會加速。","外界催快會讓你更緊；先講清你缺的資訊與你多久能定案。"],tip:"一句話說清楚『我缺什麼』＋『拿到後多久能定案』。"},
+  CI:{title:"CI（標準＋連結）",lines:["你重一致（C），也在意被公平理解（I）。","你在守的是不要誤會、不要失信；會想確認對方真的懂。","你容易腦內反覆推演；用具體例子取代抽象解釋更省力。"],tip:"先給例子（發生什麼）→再講標準（你要什麼）。"},
+  CS:{title:"CS（標準＋安穩）",lines:["你重標準（C），也重穩定（S）。","你把事做對、也把人顧好；可靠但容易累。","你不想麻煩別人就自己補；訂出回報格式與完成定義，你會輕很多。"],tip:"你負責標準與結論；對方負責配合與回報。"},
 };
 
 /** =========================
- * 狀態：可分開作答
+ * 單一面向作答狀態（不共享）
  * ========================= */
+let currentKey = null;     // 'life' | 'work' | 'love'
+let qIndex = 0;
+let answers = [];          // [{qIndex, pickKey}]
+let scores = {D:0,I:0,S:0,C:0};
+
 const $ = (id)=>document.getElementById(id);
 
-let currentSection = null; // 'life' | 'work' | 'love' | null
-let qIndex = 0;
-let entries = [];          // {sectionKey,qIndex,pickKey,pickText}
-let completed = new Set(); // 完成的面向
-let showReport = false;
-
-let scoresBySection = {
-  life: {D:0,I:0,S:0,C:0},
-  work: {D:0,I:0,S:0,C:0},
-  love: {D:0,I:0,S:0,C:0},
-};
-
-function resetAll(){
-  currentSection = null;
+function resetSection(){
   qIndex = 0;
-  entries = [];
-  completed = new Set();
-  showReport = false;
-  scoresBySection = {
-    life: {D:0,I:0,S:0,C:0},
-    work: {D:0,I:0,S:0,C:0},
-    love: {D:0,I:0,S:0,C:0},
-  };
-  $("question").style.display = "none";
-  $("options").innerHTML = "";
+  answers = [];
+  scores = {D:0,I:0,S:0,C:0};
   $("result").innerHTML = "";
-  $("backBtn").disabled = true;
-  render();
+  renderQuestion();
 }
 
-function calcScores(){
-  scoresBySection = {
-    life: {D:0,I:0,S:0,C:0},
-    work: {D:0,I:0,S:0,C:0},
-    love: {D:0,I:0,S:0,C:0},
-  };
-  for(const e of entries){
-    scoresBySection[e.sectionKey][e.pickKey] += 1;
-  }
-}
-
-function answeredCount(){
-  return entries.length;
-}
-
-function sectionAnsweredCount(k){
-  return entries.filter(e=>e.sectionKey===k).length;
-}
-
-function pct(v,total){ return total===0 ? 0 : Math.round(v/total*100); }
-function sortedScores(scoreObj){
-  const arr = Object.entries(scoreObj).map(([k,v])=>({k,v}));
-  arr.sort((a,b)=> b.v - a.v);
-  return arr;
-}
-function classify(scoreObj){
-  const arr = sortedScores(scoreObj);
-  const max = arr[0].v;
-  const second = arr.find(x=>x.v < max)?.v ?? max;
-  const primary = arr.filter(x=>x.v === max).map(x=>x.k);
-  const secondary = arr.filter(x=>x.v === second && !primary.includes(x.k)).map(x=>x.k);
-  return {arr, max, second, primary, secondary};
-}
 function escapeHtml(str){
   return String(str).replace(/[&<>"']/g, s => ({
     "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
   }[s]));
 }
 
-function goMenu(){
-  showReport = false;
-  currentSection = null;
-  qIndex = 0;
-  $("result").innerHTML = "";
-  $("question").style.display = "none";
-  $("options").innerHTML = "";
-  render();
+function sortedScores(scoreObj){
+  const arr = Object.entries(scoreObj).map(([k,v])=>({k,v}));
+  arr.sort((a,b)=>b.v-a.v);
+  return arr;
 }
 
-function startSection(k){
-  showReport = false;
-  currentSection = k;
-  qIndex = sectionAnsweredCount(k); // 若已作到一半，回到該進度
-  $("result").innerHTML = "";
-  $("question").style.display = "block";
-  render();
+function classify(scoreObj){
+  const arr = sortedScores(scoreObj);
+  const max = arr[0].v;
+  const second = arr.find(x=>x.v < max)?.v ?? max;
+  const primary = arr.filter(x=>x.v===max).map(x=>x.k);
+  const secondary = arr.filter(x=>x.v===second && !primary.includes(x.k)).map(x=>x.k);
+  return {arr,max,second,primary,secondary};
 }
 
-function viewReport(){
-  showReport = true;
-  currentSection = null;
-  $("question").style.display = "none";
-  $("options").innerHTML = "";
-  render();
-}
+function buildSinglePrimaryAnalysis(p, s, max, second){
+  const gap = max - second;
+  const gapLine = gap >= 3
+    ? "主型很突出：你在這個面向的反應比較一致。"
+    : "差距不大：你在這個面向會依情境切換策略。";
 
-function back(){
-  if(entries.length===0) return;
-
-  // 只能退回到同一面向最後一題（避免跨面向退回造成使用者迷路）
-  if(!currentSection){
-    // 若在報告/選單，先回到最近一題所屬面向
-    const last = entries[entries.length-1];
-    currentSection = last.sectionKey;
-    showReport = false;
-  }
-
-  // 找到目前面向的最後一題作答
-  const idx = [...entries].map((e,i)=>({e,i})).reverse().find(x=>x.e.sectionKey===currentSection)?.i;
-  if(idx === undefined) return;
-
-  entries.splice(idx,1); // 刪掉該面向最後一題
-  calcScores();
-
-  completed.delete(currentSection); // 退題後不保證仍完成
-  qIndex = sectionAnsweredCount(currentSection);
-  $("result").innerHTML = "";
-  render();
-}
-
-function pick(opt){
-  // 若這題已經答過（從中途續作），先把該題之後的答案清掉（同面向）
-  const already = entries.find(e=>e.sectionKey===currentSection && e.qIndex===qIndex);
-  if(already){
-    entries = entries.filter(e => !(e.sectionKey===currentSection && e.qIndex>=qIndex));
-  }
-
-  entries.push({sectionKey: currentSection, qIndex, pickKey: opt.k, pickText: opt.t});
-  qIndex += 1;
-
-  calcScores();
-
-  // 若完成該面向 10 題
-  if(qIndex >= BANK[currentSection].questions.length){
-    completed.add(currentSection);
-    currentSection = null;
-    qIndex = 0;
-
-    // 完成後直接留在同頁：顯示一個「完成提示＋可直接看任兩面向比較」
-    showReport = true; // 完成面向後，直接導向報告（但不強迫做完三個）
-  }
-
-  render();
-}
-
-/** =========================
- * UI：選單
- * ========================= */
-function renderMenu(){
-  const done = [...completed];
-  const doneNames = done.map(k=>BANK[k].name).join("、") || "尚未完成任何面向";
-
-  const btns = KEYS.map(k=>{
-    const answered = sectionAnsweredCount(k);
-    const total = BANK[k].questions.length;
-    const status = completed.has(k) ? "（已完成）" : (answered>0 ? `（已作答 ${answered}/${total}）` : "");
-    const primaryBtnText = completed.has(k) ? `重新進入：${BANK[k].name}` : `開始／繼續：${BANK[k].name}`;
-    return `
-      <button onclick="startSection('${k}')">
-        <b style="color:var(--accent)">${primaryBtnText}</b><br/>
-        <span class="small">${escapeHtml(BANK[k].intro)}</span>
-        <div class="tag">${status || "（未開始）"}</div>
-      </button>
+  let comboHTML = "";
+  if(s){
+    const key = `${p}${s}`;
+    const pack = COMBO[key];
+    comboHTML = pack ? `
+      <p class="small">主輔型組合：<b style="color:var(--text)">${pack.title}</b></p>
+      <ul>${pack.lines.map(x=>`<li>${x}</li>`).join("")}</ul>
+      <p class="small muted"><b>建議用法：</b>${pack.tip}</p>
+    ` : `
+      <p class="small">主輔型組合：<b style="color:var(--text)">${p}${s}</b></p>
+      <ul>
+        <li>你以 ${TYPE[p].name} 為主軸，同時帶著 ${TYPE[s].name} 的調節策略。</li>
+        <li>你會在兩種策略之間切換，目的是讓事情或關係更可控。</li>
+      </ul>
     `;
-  }).join("");
+  } else {
+    comboHTML = `
+      <p class="small">輔型不明顯（分數接近）。你在此面向更擅長看情境選方法。</p>
+      <ul>
+        <li>你不是沒有主軸，而是你有更多工具可以用。</li>
+        <li>你容易累的點，常來自界線/分工/標準沒有說清楚。</li>
+      </ul>
+    `;
+  }
 
-  // 任兩面向比較提示
-  const compareHint = done.length >= 2
-    ? `<p class="small">你已完成 <b style="color:var(--text)">${done.length}</b> 個面向：<b style="color:var(--text)">${escapeHtml(doneNames)}</b>。下方報告頁會自動產出「任兩／三面向比較」。</p>`
-    : `<p class="small">目前完成：<b style="color:var(--text)">${escapeHtml(doneNames)}</b>。完成任兩個面向後，就會出現「相互分析（比較報告）」。</p>`;
+  return `
+    <div class="box" style="margin-top:12px">
+      <h2 style="margin-top:0">解析</h2>
+      <p><b>${TYPE[p].name}</b>：${TYPE[p].essence}</p>
+      <p class="small">${gapLine}</p>
 
-  $("menuPanel").innerHTML = `
-    <div class="box">
-      <h2 style="margin-top:0">選單</h2>
-      ${compareHint}
-      <div class="row" style="margin-top:8px">
-        <button class="secondary smallBtn" onclick="viewReport()">查看報告（即時）</button>
-        <button class="secondary smallBtn" onclick="resetAll()">全部重設</button>
+      <div class="box" style="margin-top:10px">
+        <h2 style="margin-top:0">主輔型搭配說明</h2>
+        ${comboHTML}
       </div>
-    </div>
-    <div class="center">
-      ${btns}
+
+      <div class="grid" style="margin-top:10px">
+        <div class="box">
+          <h2 style="margin-top:0">核心模式</h2>
+          <ul>
+            <li><b>常見觸發點：</b>${TYPE[p].stress[0]}</li>
+            <li><b>你會怎麼保護自己：</b>${TYPE[p].shadow}</li>
+            <li><b>你其實在守護的是：</b>${TYPE[p].needs[0]}</li>
+          </ul>
+        </div>
+        <div class="box">
+          <h2 style="margin-top:0">回到穩定的方式</h2>
+          <ul>${TYPE[p].repair.map(x=>`<li>${x}</li>`).join("")}</ul>
+        </div>
+      </div>
     </div>
   `;
 }
 
-/** =========================
- * 報告產生
- * ========================= */
-function labelPrimarySecondary(primary, secondary){
-  const pText = primary.length===1 ? TYPE[primary[0]].name : `並列主型：${primary.map(k=>TYPE[k].name).join("、")}`;
-  const sText = secondary.length===1 ? TYPE[secondary[0]].name : (secondary.length>1 ? `並列輔型：${secondary.map(k=>TYPE[k].name).join("、")}` : "輔型不明顯（分數接近）");
-  return {pText, sText};
+function buildMultiPrimaryAnalysis(primary){
+  const names = primary.map(k=>TYPE[k].name).join("、");
+  return `
+    <div class="box" style="margin-top:12px">
+      <h2 style="margin-top:0">解析（並列主型）</h2>
+      <p>你呈現「並列主型（${names}）」。這通常表示你在此面向會依情境啟用不同策略。</p>
+      <p class="small">若想更清楚哪一個更像核心，可擴充題數或把題目改得更貼近你常遇到的真實情境。</p>
+    </div>
+  `;
 }
 
 function buildHowToTreat(primary, secondary){
-  if(primary.length === 1){
+  if(primary.length===1){
     const p = primary[0];
-    const s = (secondary.length === 1) ? secondary[0] : null;
+    const s = (secondary.length===1) ? secondary[0] : null;
     const extra = s ? `<p class="small">輔型加分（${TYPE[s].name}）：${TYPE[s].howToTreat[0]}。</p>` : "";
     return `<ul>${TYPE[p].howToTreat.map(x=>`<li>${x}</li>`).join("")}</ul>${extra}`;
   }
   return `
     <ul>
-      <li>先用一段話把「下一步」與「範圍」講清楚。</li>
+      <li>先用一段話把下一步與範圍講清楚。</li>
       <li>把期待落到可執行：何時、做什麼、怎麼回報。</li>
-      <li>避免用猜的：用一句話確認彼此理解。</li>
+      <li>用一句話確認彼此理解，避免用猜的。</li>
     </ul>
   `;
 }
 
 function buildSpeak(primary, secondary){
-  if(primary.length === 1){
+  if(primary.length===1){
     const p = primary[0];
-    const s = (secondary.length === 1) ? secondary[0] : null;
+    const s = (secondary.length===1) ? secondary[0] : null;
     const extra = s ? `<p class="small">輔型提醒：你用 ${TYPE[s].name} 的方式調節時，互動通常更順。</p>` : "";
     return `<ul>${TYPE[p].speak.map(x=>`<li>${x}</li>`).join("")}</ul>${extra}`;
   }
@@ -568,137 +422,22 @@ function buildSpeak(primary, secondary){
   `;
 }
 
-function buildRepair(primary, secondary){
-  if(primary.length === 1){
-    const p = primary[0];
-    const s = (secondary.length===1) ? secondary[0] : null;
-    const extra = s ? `<p class="small">輔型提醒：你也可以用 ${TYPE[s].name} 的方式（例如：${TYPE[s].repair[0]}）幫自己回穩。</p>` : "";
-    return `<ul>${TYPE[p].repair.map(x=>`<li>${x}</li>`).join("")}</ul>${extra}`;
-  }
-  return `
-    <ul>
-      <li>先把需求變具體：時間點、範圍、下一步。</li>
-      <li>若你在反覆想：先暫定一個結論，約定驗證點。</li>
-      <li>若你在吞：先用小表態說出一個需求，不用一次說完。</li>
-    </ul>
-  `;
-}
+function buildResult(){
+  const total = Object.values(scores).reduce((a,b)=>a+b,0);
+  const {arr,primary,secondary,max,second} = classify(scores);
 
-function buildSecondaryAnalysis(primary, secondary){
-  if(primary.length === 1 && secondary.length === 1){
-    const key = `${primary[0]}${secondary[0]}`;
-    const pack = COMBO[key];
-    if(pack){
-      return `
-        <p class="small"><b>${pack.title}</b></p>
-        <ul>${pack.lines.map(x=>`<li>${x}</li>`).join("")}</ul>
-        <p class="small muted"><b>建議用法：</b>${pack.tip}</p>
-      `;
-    }
-  }
-  return `
-    <ul>
-      <li>主型是第一反應；輔型是你用來調節與保護的第二套策略。</li>
-      <li>若分數接近，表示你切換情境的能力強，並非不穩定。</li>
-      <li>想更清楚主輔型強弱，可擴充題數（16／24 題）。</li>
-    </ul>
-  `;
-}
-
-function buildSinglePrimaryAnalysis(p, s, max, second, sectionName){
-  const gap = max - second;
-  const gapLine = gap >= 3
-    ? "主型突出：你在這個面向的反應相對一致。"
-    : "差距不大：你在這個面向會依情境切換策略。";
-
-  let comboHTML = "";
-  if(s){
-    const key = `${p}${s}`;
-    const pack = COMBO[key];
-    comboHTML = pack ? `
-      <p class="small">你的主輔型組合：<b style="color:var(--text)">${pack.title}</b></p>
-      <ul>${pack.lines.map(x=>`<li>${x}</li>`).join("")}</ul>
-      <p class="small muted"><b>建議用法：</b>${pack.tip}</p>
-    ` : `
-      <p class="small">你的主輔型組合：<b style="color:var(--text)">${p}${s}</b></p>
-      <ul>
-        <li>你在此面向以 ${TYPE[p].name} 為主軸，同時帶著 ${TYPE[s].name} 的調節策略。</li>
-        <li>你會在兩種策略之間切換，目的通常是讓關係或事情更可控。</li>
-      </ul>
-    `;
-  } else {
-    comboHTML = `
-      <p class="small">你的輔型不明顯（分數接近）。這通常代表你在此面向很「看情境選方法」。</p>
-      <ul>
-        <li>你不是沒有主軸，而是你有更多工具可以用。</li>
-        <li>你容易累的點，常來自「界線/分工/標準」沒有說清楚。</li>
-      </ul>
-    `;
-  }
-
-  const pStress = TYPE[p].stress[0] || "某些不確定與壓力情境";
-  const pNeed = TYPE[p].needs[0] || "一些你很在意的需要";
-
-  return `
-    <div class="box" style="margin-top:12px">
-      <h2 style="margin-top:0">解析（${sectionName}）</h2>
-      <p><b>${TYPE[p].name}</b>：${TYPE[p].essence}</p>
-      <p class="small">${gapLine}</p>
-
-      <div class="box" style="margin-top:10px">
-        <h2 style="margin-top:0">主輔型搭配說明</h2>
-        ${comboHTML}
-      </div>
-
-      <div class="grid" style="margin-top:10px">
-        <div class="box">
-          <h2 style="margin-top:0">你在這個面向裡的核心模式</h2>
-          <ul>
-            <li><b>常見觸發點：</b>${pStress}</li>
-            <li><b>你會怎麼保護自己：</b>${TYPE[p].shadow}</li>
-            <li><b>你其實在守護的是：</b>${pNeed}</li>
-          </ul>
-        </div>
-        <div class="box">
-          <h2 style="margin-top:0">你比較容易回到穩定的方式</h2>
-          <ul>${TYPE[p].repair.map(x=>`<li>${x}</li>`).join("")}</ul>
-        </div>
-      </div>
-    </div>
-  `;
-}
-
-function buildMultiPrimaryAnalysis(primary, sectionName){
-  const names = primary.map(k=>TYPE[k].name).join("、");
-  return `
-    <div class="box" style="margin-top:12px">
-      <h2 style="margin-top:0">解析（並列主型｜${sectionName}）</h2>
-      <p>你在此面向呈現「並列主型（${names}）」。這通常意味著你會依場景啟用不同策略，而不是沒有主軸。</p>
-      <p class="small">若想更清楚哪一個更像核心，可擴充題數或把題目改成更貼近你真實常遇到的情境。</p>
-    </div>
-  `;
-}
-
-function buildAnalysisBlock(title, scoreObj, sectionName){
-  const total = Object.values(scoreObj).reduce((a,b)=>a+b,0);
-  const {arr, primary, secondary, max, second} = classify(scoreObj);
-  const {pText, sText} = labelPrimarySecondary(primary, secondary);
-
-  const reliability = total < 10
-    ? `此面向目前作答 ${total}/10 題（尚未完成），屬於初步輪廓。完成 10 題後會更穩定。`
-    : `此面向已完成 10 題，主輔型穩定度較高。`;
+  const pText = primary.length===1 ? TYPE[primary[0]].name : `並列主型：${primary.map(k=>TYPE[k].name).join("、")}`;
+  const sText = secondary.length===1 ? TYPE[secondary[0]].name : (secondary.length ? `並列輔型：${secondary.map(k=>TYPE[k].name).join("、")}` : "輔型不明顯（分數接近）");
 
   const analysis = (primary.length===1)
-    ? buildSinglePrimaryAnalysis(primary[0], secondary.length===1 ? secondary[0] : null, max, second, sectionName)
-    : buildMultiPrimaryAnalysis(primary, sectionName);
+    ? buildSinglePrimaryAnalysis(primary[0], secondary.length===1 ? secondary[0] : null, max, second)
+    : buildMultiPrimaryAnalysis(primary);
 
   return `
-    <div class="box" style="margin-top:12px">
-      <h2 style="margin-top:0">${title}</h2>
-      <div class="tag">面向：<b style="color:var(--text)">${sectionName}</b></div>
+    <div class="box">
+      <h2 style="margin-top:0">結果</h2>
       <div class="tag">主型：<b style="color:var(--text)">${pText}</b></div>
       <div class="tag">輔型：<b style="color:var(--text)">${sText}</b></div>
-      <p class="small warn">${reliability}</p>
 
       <h2>分數分布</h2>
       <table class="table">
@@ -726,203 +465,63 @@ function buildAnalysisBlock(title, scoreObj, sectionName){
           ${buildSpeak(primary, secondary)}
         </div>
       </div>
-
-      <div class="box" style="margin-top:12px">
-        <h2 style="margin-top:0">主型＋輔型的互動解析</h2>
-        ${buildSecondaryAnalysis(primary, secondary)}
-      </div>
-
-      <div class="box" style="margin-top:12px">
-        <h2 style="margin-top:0">在壓力上來的時候，你可以怎麼把自己拉回來</h2>
-        ${buildRepair(primary, secondary)}
-      </div>
     </div>
   `;
 }
 
-/** =========================
- * 任兩／三面向比較（只針對「已完成」的面向）
- * ========================= */
-function buildComparisonBlock(doneKeys){
-  const secName = {life:"生活", work:"工作", love:"感情"};
-  const dimName = {D:"主導", I:"影響", S:"穩定", C:"謹慎"};
-  const dims = ["D","I","S","C"];
-
-  const sec = {};
-  doneKeys.forEach(k => sec[k] = scoresBySection[k]);
-
-  // 以向度看：哪個面向最高
-  const highlights = dims.map(d=>{
-    const arr = Object.entries(sec).map(([k,v])=>({section:k, val:v[d]}));
-    arr.sort((a,b)=>b.val-a.val);
-    return {d, top:arr[0], second:arr[1] || null, gap: arr[1] ? (arr[0].val - arr[1].val) : arr[0].val};
-  });
-
-  // 以面向看：最突出向度
-  const bySectionHighlight = doneKeys.map(k=>{
-    const arr = sortedScores(scoresBySection[k]);
-    return {section:k, top:arr[0], second:arr[1], gap: arr[0].v - arr[1].v};
-  });
-
-  const explain = {
-    D:"在這個面向，你比較常用「推進與掌控」來穩住局面。",
-    I:"在這個面向，你比較常用「互動與回應」來確認安全感。",
-    S:"在這個面向，你比較常用「維持安穩與節奏」來避免失衡。",
-    C:"在這個面向，你比較常用「標準與一致」來降低不確定。"
-  };
-
-  const strongest = [...highlights].sort((a,b)=>b.gap-a.gap).slice(0,2);
-  const narrative = strongest.map(s=>{
-    const dim = `${s.d}（${dimName[s.d]}）`;
-    return `<li><b>${dim}</b>最高的面向是<b>${secName[s.top.section]}</b>（差距 ${s.gap}）。${explain[s.d]}</li>`;
-  }).join("");
-
-  return `
-    <div class="box" style="margin-top:12px">
-      <h2 style="margin-top:0">相互分析（任兩／三面向比較）</h2>
-      <p class="small">目前納入比較的面向：<b style="color:var(--text)">${doneKeys.map(k=>secName[k]).join("、")}</b></p>
-
-      <h2>以向度看（D / I / S / C）</h2>
-      <table class="table">
-        <thead><tr><th>向度</th><th>最高面向</th><th>分數</th><th>次高面向</th><th>差距</th></tr></thead>
-        <tbody>
-          ${highlights.map(h=>`
-            <tr>
-              <td>${h.d}（${dimName[h.d]}）</td>
-              <td>${secName[h.top.section]}</td>
-              <td>${h.top.val}</td>
-              <td>${h.second ? secName[h.second.section] : "—"}</td>
-              <td>${h.second ? h.gap : "—"}</td>
-            </tr>
-          `).join("")}
-        </tbody>
-      </table>
-
-      <h2>以面向看（哪個向度最突出）</h2>
-      <table class="table">
-        <thead><tr><th>面向</th><th>最突出向度</th><th>分數</th><th>次高</th><th>差距</th></tr></thead>
-        <tbody>
-          ${bySectionHighlight.map(s=>`
-            <tr>
-              <td>${secName[s.section]}</td>
-              <td>${TYPE[s.top.k].name}</td>
-              <td>${s.top.v}</td>
-              <td>${TYPE[s.second.k].name}</td>
-              <td>${s.gap}</td>
-            </tr>
-          `).join("")}
-        </tbody>
-      </table>
-
-      <h2>整合解讀（差距最大的地方）</h2>
-      <ul>${narrative}</ul>
-      <p class="small">差距越大，代表你在該面向越固定使用那種策略；差距小則表示你在該面向更會切換。</p>
-    </div>
-  `;
+function start(key){
+  currentKey = key;
+  $("menu").style.display = "none";
+  $("testArea").style.display = "block";
+  $("subtitle").textContent = BANK[key].intro;
+  $("sectionPill").innerHTML = `<b style="color:var(--accent)">${BANK[key].name}</b>`;
+  resetSection();
 }
 
-function buildReport(){
-  const doneKeys = KEYS.filter(k=>completed.has(k));
-  const partialKeys = KEYS.filter(k=>sectionAnsweredCount(k)>0 && !completed.has(k));
-
-  const doneTxt = doneKeys.length ? doneKeys.map(k=>BANK[k].name).join("、") : "尚未完成任何面向";
-  const partialTxt = partialKeys.length ? partialKeys.map(k=>`${BANK[k].name}（${sectionAnsweredCount(k)}/10）`).join("、") : "沒有進行中的面向";
-
-  // 報告內容：完成的面向 → 先出完整；進行中的面向 → 出「初步輪廓」
-  const blocks = [];
-
-  doneKeys.forEach(k=>{
-    blocks.push(buildAnalysisBlock(`${BANK[k].name}報告`, scoresBySection[k], BANK[k].name));
-  });
-
-  partialKeys.forEach(k=>{
-    blocks.push(buildAnalysisBlock(`${BANK[k].name}（進行中）`, scoresBySection[k], BANK[k].name));
-  });
-
-  const compare = doneKeys.length >= 2
-    ? buildComparisonBlock(doneKeys)
-    : `
-      <div class="box" style="margin-top:12px">
-        <h2 style="margin-top:0">相互分析（任兩／三面向比較）</h2>
-        <p class="small">完成任兩個面向後，這裡會自動出現比較報告（包含向度差異、面向差異與整合解讀）。</p>
-      </div>
-    `;
-
-  return `
-    <div class="box">
-      <h2 style="margin-top:0">報告（可即時查看）</h2>
-      <p class="small">已完成：<b style="color:var(--text)">${escapeHtml(doneTxt)}</b></p>
-      <p class="small">進行中：<b style="color:var(--text)">${escapeHtml(partialTxt)}</b></p>
-      <div class="row" style="margin-top:8px">
-        <button class="secondary smallBtn" onclick="goMenu()">回選單</button>
-      </div>
-    </div>
-    ${compare}
-    ${blocks.join("") || `<div class="box" style="margin-top:12px"><p class="small">目前還沒有作答內容。你可以回選單先開始任一面向。</p></div>`}
-  `;
-}
-
-/** =========================
- * render：依狀態切換
- * ========================= */
-function render(){
-  calcScores();
-
-  // 進度條：用「已作答題數 / 30」顯示即可（因為不強迫作完）
-  const a = answeredCount();
-  $("progressText").textContent = `已作答：${a} / ${TOTAL_MAX} 題（可分開作，不必全做完）`;
-  $("progressFill").style.width = `${Math.round((a/TOTAL_MAX)*100)}%`;
-
-  // Back 按鈕可用：只要該面向有作答
-  if(currentSection){
-    $("backBtn").disabled = sectionAnsweredCount(currentSection) === 0;
-  }else{
-    $("backBtn").disabled = entries.length === 0;
-  }
-
-  // 顯示模式：報告 or 作題 or 選單
-  if(showReport){
-    $("title").textContent = "DISC 報告（可即時查看）";
-    $("subtitle").textContent = "你可以只完成任兩個面向，就在同一頁看到相互分析。也可以先做一部分，先看初步輪廓。";
-    $("menuPanel").innerHTML = "";
-    $("question").style.display = "none";
-    $("options").innerHTML = "";
-    $("result").innerHTML = buildReport();
-    return;
-  }
-
-  if(!currentSection){
-    $("title").textContent = "DISC 三面向測驗（可分開作答）";
-    $("subtitle").innerHTML = `生活／工作／感情可以分開作。完成任兩個面向後，報告頁會出現<strong>相互分析（比較報告）</strong>。`;
-    $("result").innerHTML = "";
-    $("question").style.display = "none";
-    $("options").innerHTML = "";
-    renderMenu();
-    return;
-  }
-
-  // 正在作題
-  const sec = BANK[currentSection];
-  $("title").textContent = `DISC 測驗｜${sec.name}`;
-  $("subtitle").textContent = sec.intro;
-  $("menuPanel").innerHTML = "";
+function goHome(){
+  currentKey = null;
+  $("menu").style.display = "grid";
+  $("testArea").style.display = "none";
+  $("subtitle").textContent = "選一個面向開始作答（各 10 題）。每個面向的作答與結果彼此獨立。";
   $("result").innerHTML = "";
+}
 
-  const total = sec.questions.length;
-  const answeredInSec = sectionAnsweredCount(currentSection);
-  const next = sec.questions[qIndex];
-
-  $("question").style.display = "block";
-  $("question").innerHTML = `
-    <span class="pill"><b style="color:var(--accent)">${sec.name}</b></span>
-    <span class="pill"><b style="color:var(--accent)">第 ${qIndex+1} / ${total} 題</b></span>
-    <span class="pill"><b style="color:var(--accent)">本面向進度 ${answeredInSec} / ${total}</b></span>
-    <div style="margin-top:10px">${escapeHtml(next.q)}</div>
+function renderMenu(){
+  $("menu").innerHTML = `
+    <button onclick="start('life')">
+      <b style="color:var(--accent)">開始：生活面向</b><br/>
+      <span class="small">${escapeHtml(BANK.life.intro)}</span>
+    </button>
+    <button onclick="start('work')">
+      <b style="color:var(--accent)">開始：工作面向</b><br/>
+      <span class="small">${escapeHtml(BANK.work.intro)}</span>
+    </button>
+    <button onclick="start('love')">
+      <b style="color:var(--accent)">開始：感情面向</b><br/>
+      <span class="small">${escapeHtml(BANK.love.intro)}</span>
+    </button>
   `;
+}
+
+function renderQuestion(){
+  const sec = BANK[currentKey];
+  $("qPill").innerHTML = `<b style="color:var(--accent)">第 ${qIndex+1} / ${sec.questions.length} 題</b>`;
+  $("backBtn").disabled = qIndex === 0;
+
+  // 完成
+  if(qIndex >= sec.questions.length){
+    $("question").textContent = "已完成";
+    $("options").innerHTML = "";
+    $("result").innerHTML = buildResult();
+    return;
+  }
+
+  const q = sec.questions[qIndex];
+  $("question").textContent = q.q;
 
   const box = $("options");
   box.innerHTML = "";
-  next.o.forEach((opt, i)=>{
+  q.o.forEach((opt,i)=>{
     const b = document.createElement("button");
     b.innerHTML = `<b style="color:var(--accent)">(${String.fromCharCode(65+i)})</b> ${escapeHtml(opt.t)}`;
     b.onclick = ()=>pick(opt);
@@ -930,21 +529,36 @@ function render(){
   });
 }
 
-/** =========================
- * 綁定
- * ========================= */
+function pick(opt){
+  answers.push({qIndex, pickKey: opt.k});
+  scores[opt.k] += 1;
+  qIndex += 1;
+  renderQuestion();
+}
+
+function back(){
+  if(qIndex === 0) return;
+  // 退回一題：扣掉分數
+  const last = answers.pop();
+  if(last){
+    scores[last.pickKey] -= 1;
+  }
+  qIndex -= 1;
+  $("result").innerHTML = "";
+  renderQuestion();
+}
+
+/** 綁定（供 onclick 使用） */
+window.start = start;
+
+/** 按鈕 */
 $("backBtn").addEventListener("click", back);
-$("toMenuBtn").addEventListener("click", goMenu);
-$("viewReportBtn").addEventListener("click", viewReport);
-$("resetBtn").addEventListener("click", resetAll);
+$("restartBtn").addEventListener("click", resetSection);
+$("homeBtn").addEventListener("click", goHome);
 
-// 讓選單按鈕可用（因為用 onclick）
-window.startSection = startSection;
-window.viewReport = viewReport;
-window.goMenu = goMenu;
-window.resetAll = resetAll;
-
-resetAll();
+/** init */
+renderMenu();
+goHome();
 </script>
 </body>
 </html>
