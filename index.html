@@ -5,19 +5,52 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>DISC 行為測驗</title>
   <style>
-    body{font-family:"Noto Sans TC","Microsoft JhengHei",sans-serif;background:#0b1220;color:#e9eefc;margin:0}
-    .wrap{max-width:800px;margin:auto;padding:20px}
-    .card{background:#121b2e;border-radius:14px;padding:20px}
+    body{
+      font-family:"Noto Sans TC","Microsoft JhengHei",sans-serif;
+      background:#0b1220;
+      color:#e9eefc;
+      margin:0;
+    }
+    .wrap{
+      max-width:800px;
+      margin:auto;
+      padding:20px;
+    }
+    .card{
+      background:#121b2e;
+      border-radius:14px;
+      padding:22px;
+    }
     h1{margin-top:0}
-    button{width:100%;padding:14px;margin-top:10px;border-radius:10px;border:none;background:#1e2a46;color:#fff;font-size:16px}
+    .progress{
+      font-size:14px;
+      color:#b7c0da;
+      margin-bottom:10px;
+    }
+    button{
+      width:100%;
+      padding:14px;
+      margin-top:10px;
+      border-radius:10px;
+      border:none;
+      background:#1e2a46;
+      color:#fff;
+      font-size:16px;
+      cursor:pointer;
+    }
     button:hover{background:#2b3a6b}
     .opt{margin-top:8px}
+    .result{
+      line-height:1.7;
+    }
   </style>
 </head>
 <body>
+
 <div class="wrap">
   <div class="card">
     <h1 id="title">DISC 行為測驗</h1>
+    <div class="progress" id="progress"></div>
     <p id="question">按開始進行測驗</p>
     <div id="options"></div>
     <button id="startBtn">開始</button>
@@ -27,53 +60,141 @@
 <script>
 const questions = [
   {
-    q:"當事情資訊不完整但需要推進時，你通常會？",
+    q:"當事情資訊還不完整，但時間已經在倒數時，你通常會？",
     o:[
-      {k:"D",t:"先行動再修正，重點是不要停"},
-      {k:"I",t:"找人討論，確認共識"},
-      {k:"S",t:"觀察情況，避免影響他人"},
-      {k:"C",t:"補齊資訊後再行動"}
+      {k:"D",t:"先行動再修正，不能卡在原地"},
+      {k:"I",t:"找人討論，看看大家怎麼想"},
+      {k:"S",t:"先穩住現況，避免出錯"},
+      {k:"C",t:"補齊資訊後再做決定"}
     ]
   },
   {
-    q:"面對意見衝突時，你比較常怎麼做？",
+    q:"面對不同意見甚至有點衝突時，你比較常出現的反應是？",
     o:[
-      {k:"D",t:"直接說立場，聚焦結果"},
-      {k:"I",t:"圓融表達，顧及氣氛"},
-      {k:"S",t:"先退一步，觀察情緒"},
-      {k:"C",t:"說清楚邏輯與依據"}
+      {k:"D",t:"直接說立場，事情要有效率"},
+      {k:"I",t:"用圓融方式表達，顧氣氛"},
+      {k:"S",t:"先退一步，觀察對方反應"},
+      {k:"C",t:"把邏輯與依據講清楚"}
+    ]
+  },
+  {
+    q:"在節奏混亂、標準不清楚的環境中，你會先做什麼？",
+    o:[
+      {k:"D",t:"直接把方向定下來"},
+      {k:"I",t:"透過溝通拉回共識"},
+      {k:"S",t:"先配合現況穩住"},
+      {k:"C",t:"先釐清流程與規則"}
+    ]
+  },
+  {
+    q:"當你感到壓力變大時，最主要的來源通常是？",
+    o:[
+      {k:"D",t:"事情卡住、進度太慢"},
+      {k:"I",t:"互動不順、氣氛不好"},
+      {k:"S",t:"被要求太多、顧太多人"},
+      {k:"C",t:"標準不清楚、一直被改"}
+    ]
+  },
+  {
+    q:"和他人合作一件事情時，你內在最在意的是？",
+    o:[
+      {k:"D",t:"誰負責、誰決定"},
+      {k:"I",t:"互動順不順、有沒有共識"},
+      {k:"S",t:"相處是否舒服"},
+      {k:"C",t:"分工與責任是否清楚"}
+    ]
+  },
+  {
+    q:"當你收到他人對你的批評或建議時，你通常會？",
+    o:[
+      {k:"D",t:"先判斷有沒有用"},
+      {k:"I",t:"在意對方怎麼說、語氣如何"},
+      {k:"S",t:"先反省是不是自己沒顧好"},
+      {k:"C",t:"分析內容是否合理"}
+    ]
+  },
+  {
+    q:"如果你的做法可能讓別人感到壓力，你比較常？",
+    o:[
+      {k:"D",t:"方向對比較重要"},
+      {k:"I",t:"多說明、多鼓勵"},
+      {k:"S",t:"調整自己，避免對方不舒服"},
+      {k:"C",t:"檢視流程是不是有問題"}
+    ]
+  },
+  {
+    q:"一件事沒有人要求你做，但你覺得可以更好時，你會？",
+    o:[
+      {k:"D",t:"視重要性再決定要不要做"},
+      {k:"I",t:"如果能讓團隊更順就補"},
+      {k:"S",t:"默默把它補好"},
+      {k:"C",t:"做到符合自己標準才安心"}
+    ]
+  },
+  {
+    q:"當需要你做出決定時，你通常比較依賴的是？",
+    o:[
+      {k:"D",t:"直覺與判斷速度"},
+      {k:"I",t:"他人的回饋與反應"},
+      {k:"S",t:"過往經驗與穩定性"},
+      {k:"C",t:"資料、邏輯與分析"}
+    ]
+  },
+  {
+    q:"回顧自己多數時候的工作狀態，你最像哪一種？",
+    o:[
+      {k:"D",t:"推進事情的人"},
+      {k:"I",t:"帶動氣氛的人"},
+      {k:"S",t:"穩住團隊的人"},
+      {k:"C",t:"把事情做對的人"}
     ]
   }
 ];
 
-let i=0;
-let score={D:0,I:0,S:0,C:0};
+let index = 0;
+let score = {D:0,I:0,S:0,C:0};
 
 function render(){
-  if(i>=questions.length){
-    document.getElementById("title").innerText="測驗完成";
-    document.getElementById("question").innerText=
-      `結果：D ${score.D}｜I ${score.I}｜S ${score.S}｜C ${score.C}`;
-    document.getElementById("options").innerHTML="";
-    document.getElementById("startBtn").style.display="none";
+  if(index >= questions.length){
+    document.getElementById("title").innerText = "測驗完成";
+    document.getElementById("progress").innerText = "";
+    document.getElementById("question").innerHTML = `
+      <div class="result">
+        <b>你的分數結果：</b><br>
+        D（主導）：${score.D}<br>
+        I（影響）：${score.I}<br>
+        S（穩定）：${score.S}<br>
+        C（謹慎）：${score.C}<br><br>
+        分數最高者為你的主要 DISC 傾向。
+      </div>`;
+    document.getElementById("options").innerHTML = "";
     return;
   }
-  document.getElementById("question").innerText=questions[i].q;
-  const box=document.getElementById("options");
-  box.innerHTML="";
-  questions[i].o.forEach(opt=>{
-    const b=document.createElement("button");
-    b.className="opt";
-    b.innerText=opt.t;
-    b.onclick=()=>{score[opt.k]++;i++;render();}
+
+  document.getElementById("progress").innerText =
+    `第 ${index+1} 題 / 共 ${questions.length} 題`;
+  document.getElementById("question").innerText = questions[index].q;
+
+  const box = document.getElementById("options");
+  box.innerHTML = "";
+  questions[index].o.forEach(opt=>{
+    const b = document.createElement("button");
+    b.className = "opt";
+    b.innerText = opt.t;
+    b.onclick = ()=>{
+      score[opt.k]++;
+      index++;
+      render();
+    };
     box.appendChild(b);
   });
 }
 
-document.getElementById("startBtn").onclick=()=>{
+document.getElementById("startBtn").onclick = ()=>{
   document.getElementById("startBtn").style.display="none";
   render();
 };
 </script>
+
 </body>
 </html>
